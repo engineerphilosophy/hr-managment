@@ -52,63 +52,6 @@ router.get('/getEmployeeList', function(req, res) {
     }
   });
 });
-/**
- * @api {get} /superadmin/getEmployeeDetailsById get employee details by id
- * @apiName getEmployeeDetailsById
- * @apiGroup superadmin
- *
- * @apiAuthor Manglesh Patel - 04/04/2021
- *
- * @apiVersion 0.0.1
- *
- * @apiHeader {String} Authorization user token
- *
- * @apiParam {Number} id employee id
- *
- *
- * @apiSuccess {Boolean} status true.
- * @apiSuccess {Number} http_code  200.
- * @apiSuccess {Object} data  [] .
- * @apiSuccess {String} message Employee details found successfully!!
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *       "status": true,
- *       "http_code": 200,
- *       "message": "Employee details found successfully!!",
- *       "data": [],
- *     }
- *
- * @apiError {Boolean} status false.
- * @apiError {Number} http_code  400.
- * @apiError {Object} data  blank object.
- * @apiError {String} message Error in getting data!!
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 400 Not Found
- *     {
- *       "status": false,
- *       "http_code": 400,
- *       "message": "Error in getting data!!",
- *       "data": {},
- *     }
- */
-router.get('/getEmployeeDetailsById', function(req, res) {
-  if(req.query.id){
-    req.body.id = req.query.id;
-    superadminService.getEmployeeDetailsById(req.body,function (error,data_response) {
-      if (error) {
-        console.log('error in getEmployeeDetailsById---superadmin-',error);
-        res.json(data_response);
-      } else {
-        res.json(data_response);
-      }
-    });
-  }else {
-    res.json({ status: false, message: "id not found", data: {}, http_code: 400 });
-  }
-});
 
 /**
  * @api {post} /superadmin/addUpdateEmployeeDetails add update employee details
@@ -277,63 +220,6 @@ router.post('/approveLeaveApplication', function(req, res) {
 });
 
 /**
- * @api {get} /superadmin/getEmployeesDailyWorksheetData get employees daily work data
- * @apiName getEmployeesDailyWorksheetData
- * @apiGroup superadmin
- *
- * @apiAuthor Manglesh Patel - 04/04/2021
- *
- * @apiVersion 0.0.1
- *
- * @apiHeader {String} Authorization user token
- *
- * @apiParam {Number} id employee id (required if want to fetch data according to user)
- * @apiParam {Number} monthly 1 if want to get monthly report else 0
- * @apiParam {Number} daily 1 if wants to get daily report else 0
- * @apiParam {Number} date date of month or day (default is today date)
- *
- *
- * @apiSuccess {Boolean} status true.
- * @apiSuccess {Number} http_code  200.
- * @apiSuccess {Object} data  [] .
- * @apiSuccess {String} message Employee worksheet data found successfully!!
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *       "status": true,
- *       "http_code": 200,
- *       "message": "Employee worksheet data found successfully!!",
- *       "data": [],
- *     }
- *
- * @apiError {Boolean} status false.
- * @apiError {Number} http_code  400.
- * @apiError {Object} data  blank object.
- * @apiError {String} message Error in getting data!!
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 400 Not Found
- *     {
- *       "status": false,
- *       "http_code": 400,
- *       "message": "Error in getting data!!",
- *       "data": {},
- *     }
- */
-router.get('/getEmployeesDailyWorksheetData', function(req, res) {
-  req.body = Object.assign(req.body,req.query);
-  superadminService.getEmployeesDailyWorksheetData(req.body,function (error,data_response) {
-    if (error) {
-      console.log('error in getEmployeesDailyWorksheetData---superadmin-',error);
-      res.json(data_response);
-    } else {
-      res.json(data_response);
-    }
-  });
-});
-
-/**
  * @api {get} /superadmin/getAllEmployeeReportCard get employees report card
  * @apiName getAllEmployeeReportCard
  * @apiGroup superadmin
@@ -389,58 +275,6 @@ router.get('/getAllEmployeeReportCard', function(req, res) {
   // }else {
   //   res.json({ status: false, message: "date not found", data: {}, http_code: 400 });
   // }
-});
-
-/**
- * @api {get} /superadmin/getWorkingMonthsList get working months list
- * @apiName getWorkingMonthsList
- * @apiGroup superadmin
- *
- * @apiAuthor Manglesh Patel - 04/04/2021
- *
- * @apiVersion 0.0.1
- *
- * @apiHeader {String} Authorization user token
- *
- *
- * @apiSuccess {Boolean} status true.
- * @apiSuccess {Number} http_code  200.
- * @apiSuccess {Object} data  [] .
- * @apiSuccess {String} message Month list found successfully!!
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *       "status": true,
- *       "http_code": 200,
- *       "message": "Month list found successfully!!",
- *       "data": [],
- *     }
- *
- * @apiError {Boolean} status false.
- * @apiError {Number} http_code  400.
- * @apiError {Object} data  blank object.
- * @apiError {String} message Error in getting data!!
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 400 Not Found
- *     {
- *       "status": false,
- *       "http_code": 400,
- *       "message": "Error in getting data!!",
- *       "data": {},
- *     }
- */
-router.get('/getWorkingMonthsList', function(req, res) {
-  req.body = Object.assign(req.body,req.query);
-  superadminService.getWorkingMonthsList(req.body,function (error,data_response) {
-    if (error) {
-      console.log('error in getWorkingMonthsList---superadmin-',error);
-      res.json(data_response);
-    } else {
-      res.json(data_response);
-    }
-  });
 });
 
 /**
@@ -507,5 +341,5 @@ router.post('/uploadZipDocument',function(req,res){
       res.jsonp(responsedata);
     }
   })
-})
+});
 module.exports = router;

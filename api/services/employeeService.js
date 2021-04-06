@@ -76,11 +76,138 @@ const employeeService = {
     },
 
     addUpdateDailyWorkData : function(body,callback){
-
+      let date = body.date, userid = body.userid, work_data = body.work_data;
+      let row_ids = underscore.unique(underscore.pluck(work_data,'row_id'));
+      let filteredIds = row_ids.filter(function(d){
+        if(d){
+          return d;
+        }
+      });
+      // check and get existing data from employee_worksheet
+      employeeService.getWorksheetDataByRowIds(filteredIds,userid,function(error,resposne){
+        if(error){
+          console.log("Error#004 in 'employeeService.js'",error);
+          callback(error,{status:false,message:"#004:Error in saving data!!",data:false,http_code:400});
+        }else {
+          let existingIds = underscore.unique(underscore.pluck(resposne.data,'row_id'));
+          async.eachOfSeries(work_data,function(row,index,cb){
+            let insertQuery = "";
+            if(row.row_id){
+              if(existingIds.indexOf(row.row_id) > -1){
+                // remove those row ids which are already existings, then we will delete left ids from existingIds array
+                existingIds.splice(existingIds.indexOf(row.row_id), 1);
+              }
+              // row_id exist then update the row
+              insertQuery = "UPDATE `employee_worksheet` SET `module`="+connection.escape(row.module)+",`description`="+connection.escape(row.description)+",`date`="+date+",`start_time`="+connection.escape(row.start_time)+",`end_time`="+connection.escape(row.end_time)+",`modified_on`= "+env.timestamp()+" WHERE row_id = "+row.row_id+" and userid = "+userid+" ";
+            }else {
+              // insert data for new row
+              insertQuery = "INSERT INTO `employee_worksheet`(`userid`, `module`, `description`, `date`, `start_time`, `end_time`, `created_on`, `modified_on`) ";
+              insertQuery += " VALUES ("+userid+","+connection.escape(row.module)+","+connection.escape(row.description)+","+date+","+connection.escape(row.start_time)+","+connection.escape(row.end_time)+","+env.timestamp()+","+env.timestamp()+")";
+            }
+            connection.query(insertQuery,function(error,result){
+              if(error){
+                console.log("Error#001 in 'employeeService.js'",error,insertQuery);
+                return cb(error);
+              }else{
+                cb();
+              }
+            });
+          },function(error){
+            if(error){
+              console.log("Error#001 in 'employeeService.js'",error);
+              callback(error,{status:false,message:"#001:Error in saving data!!",data:false,http_code:400});
+            }else{
+              if(existingIds && existingIds.length > 0){
+                // delete row ids which are not existing any more
+                let deleteQuery = "DELETE FROM `employee_worksheet` WHERE `row_id` IN ("+existingIds+") AND `userid`="+userid;
+                connection.query(deleteQuery,function(error,result){
+                  if(error){
+                    console.log("Error#005 in 'employeeService.js'",error,deleteQuery);
+                    callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
+                  }else{
+                    callback(null,{status:true,message:"Work data saved successfully!!",data:{},http_code:200});
+                  }
+                });
+              }else {
+                callback(null,{status:true,message:"Work data saved successfully!!",data:{},http_code:200});
+              }
+            }
+          });
+        }
+      });
     },
 
-    applyLeaveApplication : function(body,callback){
-      
+    getWorksheetDataByRowIds : function(rowIds,userid,callback){
+      if(rowIds && rowIds.length){
+        let query = "select * from employee_worksheet where row_id IN ("+rowIds+") and userid = "+userid;
+        connection.query(query,function(error,result){
+          if(error){
+            console.log("Error#003 in 'employeeService.js'",error,query);
+            callback(error,{status:false,message:"Error in getting data!!",data:[],http_code:400});
+          }else{
+            callback(null,{status:true,message:"Work data fetched successfully!!",data:result,http_code:200});
+          }
+        });
+      }else {
+        callback(null,{status:true,message:"Work data fetched successfully!!",data:[],http_code:200});
+      }
+    },
+
+    addUpdateLeaveApplication : function(body,callback){
+      let userid = body.userid;
+      let insertQuery = "";
+      if(body.row_id){
+        insertQuery = "UPDATE `leave_application` SET `description`="+connection.escape(body.description)+",`date_from`="+body.date_from+",`date_to`="+body.date_to+",`total_days`="+body.total_days+",`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id+" and userid = "+userid+" ";
+      }else {
+        insertQuery = "INSERT INTO `leave_application`(`userid`, `description`, `date_from`, `date_to`, `total_days`, `approve_status`, `created_on`, `modified_on`) ";
+        insertQuery += " VALUES ("+userid+","+connection.escape(body.description)+","+body.date_from+","+body.date_to+","+body.total_days+",0,"+env.timestamp()+","+env.timestamp()+")";
+      }
+      connection.query(insertQuery,function(error,result){
+        if(error){
+          console.log("Error#002 in 'employeeService.js'",error,insertQuery);
+          callback(error,{status:false,message:"Error in saving data!!",data:false,http_code:400});
+        }else{
+          callback(null,{status:true,message:"Leave application saved successfully!!",data:result.insertId,http_code:200});
+        }
+      });
+    },
+
+    getLeaveApplicationById : function(body,callback){
+      let query = "SELECT * FROM `leave_application` WHERE `row_id`="+body.row_id+" AND `userid` = "+body.userid;
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#006 in 'employeeService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "Leave application found successfully!!",data: result,http_code: 200});
+        }
+      });
+    },
+
+    deleteLeaveApplication : function(body,callback){
+      let userid = body.userid, row_id = body.row_id;
+      employeeService.getLeaveApplicationById(body,function(error,response){
+        if(error){
+          callback(error, {status: false, message: "Error in deleting data!!", data: {}, http_code: 400});
+        }else {
+          let leaveData = response.data;
+          let date_from = leaveData && leaveData.length > 0 ? leaveData[0].date_from : 0;
+          let today_date = +new Date();
+          if(date_from <= today_date){
+            callback(error, {status: false, message: "Leave date is expired!!", data: {}, http_code: 400});
+          }else {
+            let deleteQuery = "DELETE FROM `leave_application` WHERE `row_id`="+body.row_id+" AND `userid` = "+body.userid;
+            connection.query(deleteQuery, function (error, result) {
+              if (error) {
+                console.log("Error#006 in 'employeeService.js'", error, deleteQuery);
+                callback(error, {status: false, message: "Error in deleting data!!", data: [], http_code: 400});
+              } else {
+                callback(null, {status: true,message: "Leave application deleted successfully!!",data: [],http_code: 200});
+              }
+            });
+          }
+        }
+      });
     }
 };
 module.exports = employeeService;
