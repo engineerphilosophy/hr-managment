@@ -153,21 +153,97 @@ const employeeService = {
       }
     },
 
+    getEmployeesDailyWorkByDate : function(body,callback){
+      let date = body.date;
+      let start = new Date(date);
+      start.setHours(0,0,0,0);
+      var sdate = +new Date(start);
+      // end date
+      let end = new Date(date);
+      end.setHours(23,59,59,999);
+      var edate = +new Date(end);
+      let query = "select * from employee_worksheet where `date` >= "+sdate+" AND `date` <= "+edate+" and userid = "+userid;
+      connection.query(query,function(error,result){
+        if(error){
+          console.log("Error#003 in 'employeeService.js'",error,query);
+          callback(error,{status:false,message:"Error in getting data!!",data:[],http_code:400});
+        }else{
+          callback(null,{status:true,message:"Work data fetched successfully!!",data:result,http_code:200});
+        }
+      });
+    },
+
     addUpdateLeaveApplication : function(body,callback){
       let userid = body.userid;
-      let insertQuery = "";
-      if(body.row_id){
-        insertQuery = "UPDATE `leave_application` SET `description`="+connection.escape(body.description)+",`date_from`="+body.date_from+",`date_to`="+body.date_to+",`total_days`="+body.total_days+",`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id+" and userid = "+userid+" ";
+      let date_from = +body.date_from;
+      let date_to = +body.date_to;
+      let start_date = new Date(date_from);
+      let end_date = new Date(date_to);
+      let datesArray = getDates(start_date, end_date);
+      // if datesArray is empty then start date and end dates are same then push start date in array.
+      if(datesArray.length==0){
+        datesArray.push(start_date);
       }else {
-        insertQuery = "INSERT INTO `leave_application`(`userid`, `description`, `date_from`, `date_to`, `total_days`, `approve_status`, `created_on`, `modified_on`) ";
-        insertQuery += " VALUES ("+userid+","+connection.escape(body.description)+","+body.date_from+","+body.date_to+","+body.total_days+",0,"+env.timestamp()+","+env.timestamp()+")";
+        let last_date = datesArray[datesArray.length - 1];
+        if(last_date.getDate() == last_date.getDate() && last_date.getMonth() == last_date.getMonth() && last_date.getFullYear() == last_date.getFullYear()){
+          // nothing to do
+        }else {
+          // if last item of array is not same as end date then push end date
+          datesArray.push(end_date);
+        }
       }
-      connection.query(insertQuery,function(error,result){
+      let inserted = false;
+      async.eachOfSeries(datesArray,function(single_date,index,cb){
+        employeeService.getHolidayByGivenDate(single_date,function(error,response){
+          if(error){
+            return cb(error);
+          }else {
+            let holiday = response.data && response.data.length > 0 ? true : false;
+            if(holiday){
+              // if holiday then do not add row
+              cb();
+            }else {
+              // insertQuery = "UPDATE `leave_application` SET `description`="+connection.escape(body.description)+",`date_from`="+body.date_from+",`date_to`="+body.date_from+",`total_days`=1,`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id+" and userid = "+userid+" ";
+              let insertQuery = "INSERT INTO `leave_application`(`userid`, `description`, `date_from`, `date_to`, `total_days`, `approve_status`, `created_on`, `modified_on`) ";
+              insertQuery += " VALUES ("+userid+","+connection.escape(body.description)+","+body.date_from+","+body.date_from+",1,0,"+env.timestamp()+","+env.timestamp()+")";
+              connection.query(insertQuery,function(error,result){
+                if(error){
+                  console.log("Error#002 in 'employeeService.js'",error,insertQuery);
+                  return cb(error);
+                }else{
+                  inserted = true;
+                  cb();
+                }
+              });
+            }
+          }
+        });
+      },function(error){
         if(error){
-          console.log("Error#002 in 'employeeService.js'",error,insertQuery);
+          console.log("Error#0021 in 'employeeService.js'",error,insertQuery);
           callback(error,{status:false,message:"Error in saving data!!",data:false,http_code:400});
         }else{
           callback(null,{status:true,message:"Leave application saved successfully!!",data:result.insertId,http_code:200});
+        }
+      });
+    },
+
+    getHolidayByGivenDate : function(date,callback){
+      let start = date;
+      start.setHours(0,0,0,0);
+      var sdate = +new Date(start);
+      // end date
+      let end = date;
+      end.setHours(23,59,59,999);
+      var edate = +new Date(end);
+
+      let query = "SELECT * FROM `holidays` WHERE `date` >= "+sdate+" AND `date` <= "+edate;
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#0061 in 'employeeService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "Holiday found successfully!!",data: result,http_code: 200});
         }
       });
     },
@@ -211,3 +287,18 @@ const employeeService = {
     }
 };
 module.exports = employeeService;
+
+function getDates(startDate, stopDate) {
+  var dateArray = new Array();
+  var currentDate = startDate;
+  while (currentDate < stopDate) {
+    dateArray.push(new Date (currentDate));
+    currentDate = addDays(currentDate,1);
+  }
+  return dateArray;
+}
+
+function addDays(date,days) {
+  date.setDate(date.getDate() + days);
+  return date;
+}

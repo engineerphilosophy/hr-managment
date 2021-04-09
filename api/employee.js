@@ -278,20 +278,17 @@ router.post('/addUpdateLeaveApplication', function(req, res) {
   });
 });
 /**
- * @api {get} /employee/getEmployeesDailyWorkById get employees daily work data by id
- * @apiName getEmployeesDailyWorkById
+ * @api {get} /employee/getEmployeesDailyWorkByDate get employees daily work data by date
+ * @apiName getEmployeesDailyWorkByDate
  * @apiGroup employee
  *
- * @apiAuthor Manglesh Patel - 04/04/2021
+ * @apiAuthor Manglesh Patel - 08/04/2021
  *
  * @apiVersion 0.0.1
  *
  * @apiHeader {String} Authorization user token
  *
- * @apiParam {Number} ids comma separated daily work row ids
- * @apiParam {Number} monthly 1 if want to get monthly report else 0
- * @apiParam {Number} daily 1 if wants to get daily report else 0
- * @apiParam {Number} date date of month or day (default is today date)
+ * @apiParam {Number} date timestamp date
  *
  *
  * @apiSuccess {Boolean} status true.
@@ -322,15 +319,19 @@ router.post('/addUpdateLeaveApplication', function(req, res) {
  *       "data": {},
  *     }
  */
-router.get('/getEmployeesDailyWorkById', function(req, res) {
-  req.body = Object.assign(req.body,req.query);
-  employeeService.getEmployeesDailyWorkById(req.body,function (error,data_response) {
-    if (error) {
-      console.log('error in getEmployeesDailyWorkById---employee.js-',error);
-      res.json(data_response);
-    } else {
-      res.json(data_response);
-    }
-  });
+router.get('/getEmployeesDailyWorkByDate', function(req, res) {
+  if(req.query.date){
+    req.body = Object.assign(req.body,req.query);
+    employeeService.getEmployeesDailyWorkByDate(req.body,function (error,data_response) {
+      if (error) {
+        console.log('error in getEmployeesDailyWorkByDate---employee.js-',error);
+        res.json(data_response);
+      } else {
+        res.json(data_response);
+      }
+    });
+  }else {
+    res.json({ status: false, message: "date not found", data: {}, http_code: 400 });
+  }
 });
 module.exports = router;

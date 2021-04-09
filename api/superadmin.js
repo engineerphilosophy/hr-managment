@@ -342,4 +342,161 @@ router.post('/uploadZipDocument',function(req,res){
     }
   })
 });
+/**
+ * @api {post} /superadmin/addUpdateBusinessHolidays add update business holidays
+ * @apiName addUpdateBusinessHolidays
+ * @apiGroup superadmin
+ *
+ * @apiAuthor Manglesh Patel - 08/04/2021
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Number} row_id holiday id (required if updating holiday details else 0)
+ * @apiParam {String} name holiday name
+ * @apiParam {String} date holiday date
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message Holiday details saved successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Holiday details saved successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in saving data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in saving data!!",
+ *       "data": {},
+ *     }
+ */
+router.post('/addUpdateBusinessHolidays', function(req, res) {
+  superadminService.addUpdateBusinessHolidays(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in addUpdateBusinessHolidays---superadmin-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+/**
+ * @api {post} /superadmin/deleteBusinessHolidays delete business holidays
+ * @apiName deleteBusinessHolidays
+ * @apiGroup superadmin
+ *
+ * @apiAuthor Manglesh Patel - 08/04/2021
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Array} row_ids array of holidays row ids
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message Holidays deleted successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Holidays deleted successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in deleting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in deleting data!!",
+ *       "data": {},
+ *     }
+ */
+router.post('/deleteBusinessHolidays', function(req, res) {
+  superadminService.deleteBusinessHolidays(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in deleteBusinessHolidays---superadmin-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+/**
+ * @api {get} /superadmin/getBusinessHolidayList get business holidays list
+ * @apiName getBusinessHolidayList
+ * @apiGroup superadmin
+ *
+ * @apiAuthor Manglesh Patel - 08/04/2021
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Number} year year for which you are getting data. default is current year
+ *
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message Holidays list found successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Holidays list found successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in getting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in getting data!!",
+ *       "data": {},
+ *     }
+ */
+router.get('/getBusinessHolidayList', function(req, res) {
+  req.body = Object.assign(req.body,req.query);
+  superadminService.getBusinessHolidayList(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in getBusinessHolidayList---superadmin-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
 module.exports = router;

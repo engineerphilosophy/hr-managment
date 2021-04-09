@@ -12,11 +12,15 @@ var api_list = {
   'getAllEmployeeReportCard':['superadmin'],
   'getWorkingMonthsList':['superadmin','employee'],
   'uploadZipDocument':['superadmin'],
+  'addUpdateBusinessHolidays':['superadmin'],
+  'deleteBusinessHolidays':['superadmin'],
+  'getBusinessHolidayList':['superadmin','employee'],
   ////////// super admin api end //////////
   'addUpdateDailyWorkData':['employee'],
+  'addUpdateLeaveApplication':['employee'],
+  'getEmployeesDailyWorkById':['employee'],
   'addUpdateDailyWorkData':['employee'],
-  'addUpdateDailyWorkData':['employee'],
-  'addUpdateDailyWorkData':['employee'],
+  'getEmployeesDailyWorkByDate':['employee'],
 };
 
 module.exports = api_list;

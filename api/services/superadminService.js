@@ -239,6 +239,62 @@ const superadminService = {
         }
       });
     },
+
+    addUpdateBusinessHolidays : function(body,callback){
+      let query = "";
+      if(body.row_id){
+        query = "UPDATE `holidays` SET `name`="+connection.escape(body.name)+",`date`="+body.date+",`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id;
+      }else {
+        query = "INSERT INTO `holidays`(`name`, `date`, `created_on`, `modified_on`) ";
+        query += " VALUES ("+connection.escape(body.name)+","+body.date+","+env.timestamp()+","+env.timestamp()+")";
+      }
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#008 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
+        } else {
+          callback(null, {status: true,message: "Holiday details saved successfully!!",data: {},http_code: 200});
+        }
+      });
+    },
+
+    deleteBusinessHolidays : function(body,callback){
+      if(body.row_ids && body.row_ids.length > 0){
+        let query = "DELETE FROM `holidays` WHERE `row_id` IN ("+body.row_ids+")";
+        connection.query(query, function (error, result) {
+          if (error) {
+            console.log("Error#009 in 'superadminService.js'", error, query);
+            callback(error, {status: false, message: "Error in deleting data!!", data: {}, http_code: 400});
+          } else {
+            callback(null, {status: true,message: "Holidays deleted successfully!!",data: {},http_code: 200});
+          }
+        });
+      }else {
+        callback(null, {status: false,message: "Holiday ids not found!!",data: {},http_code: 400});
+      }
+    },
+
+    getBusinessHolidayList : function(body,callback){
+      let year = body.year ? parseInt(body.year) : new Date().getFullYear();
+      let start_date = year +"-01-01";
+      let end_date = year +"-12-31";
+      var start = new Date(start_date);
+      start.setHours(0,0,0,0);
+      var sdate = +new Date(start);
+      // today end date
+      var end = new Date(end_date);
+      end.setHours(23,59,59,999);
+      var edate = +new Date(end);
+      let query = "SELECT *,dayofweek(DATE_FORMAT(FROM_UNIXTIME(date/1000), '%Y-%m-%d')) as day FROM `holidays` WHERE `date` >= "+sdate+" AND `date` <= "+edate;
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#010 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "Holidays list found successfully!!",data: result,http_code: 200});
+        }
+      });
+    },
 };
 module.exports = superadminService;
 
