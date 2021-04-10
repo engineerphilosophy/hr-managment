@@ -70,7 +70,8 @@ const superadminService = {
 
     getEmployeeDetailsById : function(body,callback){
       let userid = body.user_type == 'superadmin' ? body.id : body.userid;
-      let query = "SELECT `userid`,`userid` as id, `name`, `mobile`, `email`, `salary`, `leave_credit`, `start_date`, `end_date`, `increament_date`, `document`, `modified_on`, `created_on` FROM `employee` WHERE userid = "+userid+" ";
+      let password_string = body.select_password ? ",bcrypt_password " : "";
+      let query = "SELECT `userid`,`userid` as id, `name`, `mobile`, `email`, `salary`, `leave_credit`, `start_date`, `end_date`, `increament_date`, `document`, `modified_on`, `created_on` "+password_string+" FROM `employee` WHERE userid = "+userid+" ";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#002 in 'superadminService.js'", error, query);
@@ -214,7 +215,11 @@ const superadminService = {
     },
 
     getWorkingMonthsList : function(body,callback){
-      let query = "SELECT MIN(`date`) as start_date FROM `employee_worksheet` WHERE 1";
+      let whereCondition = "1";
+      if(body.user_type == 'employee'){
+        whereCondition = " userid = "+body.userid;
+      }
+      let query = "SELECT MIN(`date`) as start_date FROM `employee_worksheet` WHERE "+whereCondition;
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#007 in 'superadminService.js'", error, query);

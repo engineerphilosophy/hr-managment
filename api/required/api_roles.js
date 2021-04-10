@@ -16,11 +16,14 @@ var api_list = {
   'deleteBusinessHolidays':['superadmin'],
   'getBusinessHolidayList':['superadmin','employee'],
   ////////// super admin api end //////////
+  ////////// employee api start //////////
   'addUpdateDailyWorkData':['employee'],
   'addUpdateLeaveApplication':['employee'],
   'getEmployeesDailyWorkById':['employee'],
   'addUpdateDailyWorkData':['employee'],
   'getEmployeesDailyWorkByDate':['employee'],
+  'updatePassword':['employee'],
+  ////////// employee api end //////////
 };
 
 module.exports = api_list;

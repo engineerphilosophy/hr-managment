@@ -334,4 +334,56 @@ router.get('/getEmployeesDailyWorkByDate', function(req, res) {
     res.json({ status: false, message: "date not found", data: {}, http_code: 400 });
   }
 });
+/**
+ * @api {post} /employee/updatePassword update the password of employee.
+ * @apiName updatePassword
+ * @apiGroup employee
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {String} current current password
+ * @apiParam {Number} id id of employee
+ * @apiParam {String} password new password for employee
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Array} data  [].
+ * @apiSuccess {String} Password updated successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Password updated successfully!!",
+ *       "data": {},
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in saving data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in saving data!!",
+ *       "data": {},
+ *     }
+ */
+
+router.post('/updatePassword', function (req, res) {
+  employeeService.updatepassword(req.body, function (error, data_response) {
+    if (error) {
+      console.log('error in updatePassword---employee.js-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
 module.exports = router;

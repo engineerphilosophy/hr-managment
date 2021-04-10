@@ -11,6 +11,7 @@ const underscore = require('underscore');
 const extend = require('xtend');
 const bcrypt = require('bcrypt');
 const common_functions = require('../functions');
+const superadminService = require('../services/superadminService');
 const saltRounds = 10;
 const employeeService = {
     //@Manglesh
@@ -70,6 +71,45 @@ const employeeService = {
             }
           }else{
             callback(null,{status:false,message:"Username does not exists!!",data:false,http_code:400});
+          }
+        }
+      });
+    },
+
+    updatepassword : function(body,callback){
+      body.select_password = true;
+      superadminService.getEmployeeDetailsById(body,function(error,resposne){
+        if(error){
+          console.log("Error#0011 in 'employeeService.js'",error);
+          callback(error,{status:false,message:"Error in saving data!!",data:[],http_code:400});
+        }else{
+          if(resposne.data && resposne.data.length > 0){
+            let result = resposne.data;
+            let bcrypt_password = result[0].bcrypt_password;
+            if (bcrypt_password !== '') {
+              bcrypt.compare(body.current, bcrypt_password, function (err, matched) {
+                if (matched) {
+                  bcrypt.hash(body.password, saltRounds, function (err, hash) {
+                    let new_bcrypt_password = hash;
+                    let updateQuery = "UPDATE `employee` SET `bcrypt_password`="+connection.escape(new_bcrypt_password)+" WHERE `userid`= "+body.id;
+                    connection.query(updateQuery,function(error,result1){
+                      if(error){
+                        console.log("Error#0012 in 'employeeService.js'",error,updateQuery);
+                        callback(error,{status:false,message:"Error in saving data!!",data:[],http_code:400});
+                      }else{
+                        callback(null,{status:true,message:"Password updated successfully!!",data:[],http_code:400});
+                      }
+                    });
+                  });
+                }else {
+                  callback(null,{status:false,message:"Wrong current password!!",data:[],http_code:400});
+                }
+              });
+            }else {
+              callback(null,{status:false,message:"Wrong current password!!",data:[],http_code:400});
+            }
+          }else {
+            callback(null,{status:false,message:"Employee not found!!",data:[],http_code:400});
           }
         }
       });
