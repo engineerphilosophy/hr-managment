@@ -16,7 +16,7 @@ const superadminService = {
       var username = connection.escape(body.username);
       var password = body.password;
       //first checking whether username exists
-      var query = "select userid,bcrypt_password from superadmin where username = " + username;
+      var query = "select userid,bcrypt_password,username,useremail from superadmin where username = " + username;
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#001 in 'superadminService.js'", error, query);
@@ -30,15 +30,16 @@ const superadminService = {
             bcrypt.compare(body.password, bcrypt_password, function (err, matched) {
               if (matched) {
                 var resdata = {};
+                delete result[0].bcrypt_password;
                 var userprofile = [result[0]];
+                userprofile[0].user_type = 'superadmin';
                 var token = common_functions.genToken(userprofile);
                 resdata.token = token;
                 resdata.record = userprofile;
-                userprofile[0].user_type = 'superadmin';
                 callback(null, {status: true,message: "User logged in successfully!!",data: resdata,http_code: 200});
                 //insert into logged_in_user table
                 var query = "insert into logged_in_users (userid,user_type,email_address,token) values "
-                query += "(" + userprofile[0].userid + ",'superadmin','" + val[0].useremail + "','" + token + "')";
+                query += "(" + userprofile[0].userid + ",'superadmin','" + userprofile[0].useremail + "','" + token + "')";
                 connection.query(query, function(error, result) {
                   if (error) {
                     console.log("Error:#S002 in 'superadminService.js'",error,query);

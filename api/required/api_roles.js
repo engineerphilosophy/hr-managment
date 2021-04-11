@@ -15,6 +15,7 @@ var api_list = {
   'addUpdateBusinessHolidays':['superadmin'],
   'deleteBusinessHolidays':['superadmin'],
   'getBusinessHolidayList':['superadmin','employee'],
+  'logout':['superadmin','employee'],
   ////////// super admin api end //////////
   ////////// employee api start //////////
   'addUpdateDailyWorkData':['employee'],

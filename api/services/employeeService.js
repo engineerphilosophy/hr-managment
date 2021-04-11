@@ -50,11 +50,12 @@ const employeeService = {
                 if(matched){
                   //password matched let the user access system.
                   var resdata = {};
+                  delete profile.bcrypt_password;
                   var userprofile = [profile];
+                  userprofile[0].user_type = 'employee';
                   var token = common_functions.genToken(userprofile);
                   resdata.token = token;
                   resdata.record = userprofile;
-                  userprofile[0].user_type = 'employee';
                   callback(null,{status:true,message:"Employee logged-in successfully!!",data:resdata,http_code:200});
                   //insert into logged_in_user table
                   var query = "insert into logged_in_users (userid,user_type,email_address,token) values "

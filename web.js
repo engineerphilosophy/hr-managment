@@ -90,9 +90,9 @@ app.options('*', cors());
 ///////////////
 app.use('/api/employeelogin', employeelogin);
 app.use('/api/superadminlogin', superadminlogin);
-app.use('/api/logout', logout);
 app.all('*', [require('./api/validateRequest')]);
 
+app.use('/api/logout', logout);
 app.use('/api/employee', employee);
 app.use('/api/superadmin',superadmin);
 

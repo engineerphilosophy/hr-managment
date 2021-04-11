@@ -4,7 +4,7 @@ var CRUD = require('mysql-crud');
 var superAdminCRUD = CRUD(connection,'superadmin');
 
 function checkLoggedInUser(id,type,token,cb){
-  let q = "select * from logged_in_users where userid = "+id+" and user_type = '"+type+"'"
+  let q = "select * from logged_in_users where userid = "+id+" and user_type = '"+type+"'";
   connection.query(q,function(error,result){
     if(error){
       console.log("error 0-0 auth",error);
