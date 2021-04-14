@@ -87,39 +87,44 @@ const superadminService = {
       body.leave_credit = body.leave_credit ? body.leave_credit : 0;
       body.salary = body.salary ? body.salary : 0;
       let password = body.password ? body.password : "123";
-      bcrypt.hash(password, saltRounds, function (err, hash) {
-        body.bcrypt_password = hash;
-        if(body.id){
-          let query = "UPDATE `employee` SET `name`= "+connection.escape(body.name)+",`mobile`= "+connection.escape(body.mobile)+",`email`= "+connection.escape(body.email)+",`salary`= "+body.salary+",`leave_credit`= "+body.leave_credit+",";
-          if(body.password){
-            query += " bcrypt_password = "+connection.escape(hash)+", ";
+      let mailvalid = ValidateEmail(body.email);
+      if(mailvalid){
+        bcrypt.hash(password, saltRounds, function (err, hash) {
+          body.bcrypt_password = hash;
+          if(body.id){
+            let query = "UPDATE `employee` SET `name`= "+connection.escape(body.name)+",`mobile`= "+connection.escape(body.mobile)+",`email`= "+connection.escape(body.email)+",`salary`= "+body.salary+",`leave_credit`= "+body.leave_credit+",";
+            if(body.password){
+              query += " bcrypt_password = "+connection.escape(hash)+", ";
+            }
+            query += " `start_date`= "+body.start_date+",`increament_date`= "+body.increament_date+",`document`="+connection.escape(body.document)+",`modified_on`= "+env.timestamp()+" ";
+            query += " WHERE `userid` = "+body.id;
+            connection.query(query, function (error, result) {
+              if (error) {
+                console.log("Error#004 in 'superadminService.js'", error, query);
+                callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
+              } else {
+                callback(null, {status: true,message: "Employee details updated successfully!!",data: body.id,http_code: 200});
+              }
+            });
+          }else {
+            let query = "INSERT INTO `employee` (`name`, `mobile`, `email`,bcrypt_password, `salary`, `leave_credit`, `start_date`, `increament_date`, `document`, `modified_on`, `created_on`) ";
+            query += " VALUES ("+connection.escape(body.name)+","+connection.escape(body.mobile)+","+connection.escape(body.email)+",";
+            query += " "+connection.escape(hash)+", ";
+            query += " "+body.salary+","+body.leave_credit+","+body.start_date+","+body.increament_date+","+connection.escape(body.document)+","+env.timestamp()+","+env.timestamp()+")";
+            connection.query(query, function (error, result) {
+              if (error) {
+                console.log("Error#003 in 'superadminService.js'", error, query);
+                callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
+              } else {
+                var employee_id=result.insertId;
+                callback(null, {status: true,message: "Employee details saved successfully!!",data: employee_id,http_code: 200});
+              }
+            });
           }
-          query += " `start_date`= "+body.start_date+",`increament_date`= "+body.increament_date+",`document`="+connection.escape(body.document)+",`modified_on`= "+env.timestamp()+" ";
-          query += " WHERE `userid` = "+body.id;
-          connection.query(query, function (error, result) {
-            if (error) {
-              console.log("Error#004 in 'superadminService.js'", error, query);
-              callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
-            } else {
-              callback(null, {status: true,message: "Employee details updated successfully!!",data: body.id,http_code: 200});
-            }
-          });
-        }else {
-          let query = "INSERT INTO `employee` (`name`, `mobile`, `email`,bcrypt_password, `salary`, `leave_credit`, `start_date`, `increament_date`, `document`, `modified_on`, `created_on`) ";
-          query += " VALUES ("+connection.escape(body.name)+","+connection.escape(body.mobile)+","+connection.escape(body.email)+",";
-          query += " "+connection.escape(hash)+", ";
-          query += " "+body.salary+","+body.leave_credit+","+body.start_date+","+body.increament_date+","+connection.escape(body.document)+","+env.timestamp()+","+env.timestamp()+")";
-          connection.query(query, function (error, result) {
-            if (error) {
-              console.log("Error#003 in 'superadminService.js'", error, query);
-              callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
-            } else {
-              var employee_id=result.insertId;
-              callback(null, {status: true,message: "Employee details saved successfully!!",data: employee_id,http_code: 200});
-            }
-          });
-        }
-      });
+        });
+      }else {
+        callback(null, {status: false, message: "Invalid email address!!", data: {}, http_code: 400});
+      }
     },
 
     endEmployeeSession : function(body,callback){
@@ -349,6 +354,14 @@ function dateRange(startDate, endDate) {
     }
   }
   return dates;
+}
+
+function ValidateEmail(mail) {
+  const mailformat = /^\w+([\+.-]?\w+)*@\w+([\+.-]?\w+)*(\.\w{2,3})*(\.\w+)+$/; ///^\w+([\+.-]?\w+)*@\w+([\+.-]?\w+)*(\.\w{2,3})+$/
+  if (mail && mail.match(mailformat)) {
+      return true;
+  }
+  return false;
 }
 
 // 1. hr login
