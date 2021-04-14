@@ -246,7 +246,7 @@ const employeeService = {
             }else {
               // insertQuery = "UPDATE `leave_application` SET `description`="+connection.escape(body.description)+",`date_from`="+body.date_from+",`date_to`="+body.date_from+",`total_days`=1,`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id+" and userid = "+userid+" ";
               let insertQuery = "INSERT INTO `leave_application`(`userid`, `description`, `date_from`, `date_to`, `total_days`, `approve_status`, `created_on`, `modified_on`) ";
-              insertQuery += " VALUES ("+userid+","+connection.escape(body.description)+","+body.date_from+","+body.date_from+",1,0,"+env.timestamp()+","+env.timestamp()+")";
+              insertQuery += " VALUES ("+userid+","+connection.escape(body.description)+","+single_date+","+single_date+",1,0,"+env.timestamp()+","+env.timestamp()+")";
               connection.query(insertQuery,function(error,result){
                 if(error){
                   console.log("Error#002 in 'employeeService.js'",error,insertQuery);

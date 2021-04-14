@@ -14,6 +14,7 @@ var api_list = {
   'uploadZipDocument':['superadmin'],
   'addUpdateBusinessHolidays':['superadmin'],
   'deleteBusinessHolidays':['superadmin'],
+  'getLeaveApplicationList':['superadmin'],
   'getBusinessHolidayList':['superadmin','employee'],
   'logout':['superadmin','employee'],
   ////////// super admin api end //////////
@@ -24,6 +25,7 @@ var api_list = {
   'addUpdateDailyWorkData':['employee'],
   'getEmployeesDailyWorkByDate':['employee'],
   'updatePassword':['employee'],
+  'getLeaveApplicationListByEmployee':['employee'],
   ////////// employee api end //////////
 };
 

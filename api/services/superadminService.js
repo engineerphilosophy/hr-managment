@@ -301,6 +301,28 @@ const superadminService = {
         }
       });
     },
+
+    getLeaveApplicationList : function(body,callback){
+      let date = body.date ? body.date : (+new Date());
+      var firstDay = +new Date(date.getFullYear(), date.getMonth(), 1);
+      var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      let whereCondition = "";
+      if(body.user_type == 'employee'){
+        whereCondition = " AND a.userid = "+body.userid;
+      }
+      let query = "SELECT a.* ,em.name,em.mobile,em.email,em.leave_credit ";
+      query += " FROM `leave_application` as a "
+      query += " LEFT JOIN employee as em ON a.userid = em.userid"
+      query += " WHERE a.`date_from` >= "+firstDay+" AND a.`date_from` <= "+lastDay+" "+whereCondition+" ORDER BY a.`date_from` DESC";
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#015 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "leave application list found successfully!!",data: result,http_code: 200});
+        }
+      });
+    },
 };
 module.exports = superadminService;
 

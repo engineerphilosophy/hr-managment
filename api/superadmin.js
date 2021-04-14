@@ -499,4 +499,58 @@ router.get('/getBusinessHolidayList', function(req, res) {
     }
   });
 });
+
+/**
+ * @api {get} /superadmin/getLeaveApplicationList get leave application list
+ * @apiName getLeaveApplicationList
+ * @apiGroup superadmin
+ *
+ * @apiAuthor Manglesh Patel - 08/04/2021
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Number} date date of month to get leave application list by month
+ *
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message leave application list found successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "leave application list found successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in getting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in getting data!!",
+ *       "data": {},
+ *     }
+ */
+router.get('/getLeaveApplicationList', function(req, res) {
+  req.body = Object.assign(req.body,req.query);
+  superadminService.getLeaveApplicationList(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in getLeaveApplicationList---superadmin-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
 module.exports = router;

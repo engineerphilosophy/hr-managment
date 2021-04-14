@@ -62,6 +62,7 @@ var superadminlogin = require('./api/superadminlogin.js');
 var superadmin = require('./api/superadmin.js');
 var employee = require('./api/employee.js');
 var logout = require('./api/logout.js');
+var cronjobForLeaveCredit = require('./api/cronjobForLeaveCredit.js');
 var cors = require('cors');
 
 app.all('*', function(req, res, next) {
@@ -95,6 +96,7 @@ app.all('*', [require('./api/validateRequest')]);
 app.use('/api/logout', logout);
 app.use('/api/employee', employee);
 app.use('/api/superadmin',superadmin);
+app.use('/api/cronjobForLeaveCredit',cronjobForLeaveCredit);
 
 io.on('connection',function(socket){
   socket.on('user',function(identity){
