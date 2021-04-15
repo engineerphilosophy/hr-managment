@@ -88,36 +88,56 @@ const superadminService = {
       body.salary = body.salary ? body.salary : 0;
       let password = body.password ? body.password : "123";
       let mailvalid = ValidateEmail(body.email);
+      var start_date = setDateStartAndEndTime(body.start_date,true);
+      var increament_date = setDateStartAndEndTime(body.increament_date,true);
       if(mailvalid){
-        bcrypt.hash(password, saltRounds, function (err, hash) {
-          body.bcrypt_password = hash;
-          if(body.id){
-            let query = "UPDATE `employee` SET `name`= "+connection.escape(body.name)+",`mobile`= "+connection.escape(body.mobile)+",`email`= "+connection.escape(body.email)+",`salary`= "+body.salary+",`leave_credit`= "+body.leave_credit+",";
-            if(body.password){
-              query += " bcrypt_password = "+connection.escape(hash)+", ";
-            }
-            query += " `start_date`= "+body.start_date+",`increament_date`= "+body.increament_date+",`document`="+connection.escape(body.document)+",`modified_on`= "+env.timestamp()+" ";
-            query += " WHERE `userid` = "+body.id;
-            connection.query(query, function (error, result) {
-              if (error) {
-                console.log("Error#004 in 'superadminService.js'", error, query);
-                callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
-              } else {
-                callback(null, {status: true,message: "Employee details updated successfully!!",data: body.id,http_code: 200});
-              }
-            });
-          }else {
-            let query = "INSERT INTO `employee` (`name`, `mobile`, `email`,bcrypt_password, `salary`, `leave_credit`, `start_date`, `increament_date`, `document`, `modified_on`, `created_on`) ";
-            query += " VALUES ("+connection.escape(body.name)+","+connection.escape(body.mobile)+","+connection.escape(body.email)+",";
-            query += " "+connection.escape(hash)+", ";
-            query += " "+body.salary+","+body.leave_credit+","+body.start_date+","+body.increament_date+","+connection.escape(body.document)+","+env.timestamp()+","+env.timestamp()+")";
-            connection.query(query, function (error, result) {
-              if (error) {
-                console.log("Error#003 in 'superadminService.js'", error, query);
-                callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
-              } else {
-                var employee_id=result.insertId;
-                callback(null, {status: true,message: "Employee details saved successfully!!",data: employee_id,http_code: 200});
+        const employeeService = require('../services/employeeService');
+        employeeService.getEmployeeDetailsByEmail(body.email,function(error,response){
+          if (error) {
+            console.log("Error#0014 in 'superadminService.js'", error);
+            callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
+          } else {
+            let user = response.data;
+            bcrypt.hash(password, saltRounds, function (err, hash) {
+              body.bcrypt_password = hash;
+              if(body.id){
+                let id = user && user.length > 0 ? user[0].userid : body.id;
+                if(id == body.id){
+                  let query = "UPDATE `employee` SET `name`= "+connection.escape(body.name)+",`mobile`= "+connection.escape(body.mobile)+",`email`= "+connection.escape(body.email)+",`salary`= "+body.salary+",`leave_credit`= "+body.leave_credit+",";
+                  if(body.password){
+                    query += " bcrypt_password = "+connection.escape(hash)+", ";
+                  }
+                  query += " `start_date`= "+start_date+",`increament_date`= "+increament_date+",`document`="+connection.escape(body.document)+",`modified_on`= "+env.timestamp()+" ";
+                  query += " WHERE `userid` = "+body.id;
+                  connection.query(query, function (error, result) {
+                    if (error) {
+                      console.log("Error#004 in 'superadminService.js'", error, query);
+                      callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
+                    } else {
+                      callback(null, {status: true,message: "Employee details updated successfully!!",data: body.id,http_code: 200});
+                    }
+                  });
+                }else {
+                  callback(null, {status: false, message: "Email already exists!!", data: {}, http_code: 400});
+                }
+              }else {
+                if(user && user.length > 0){
+                  callback(null, {status: false, message: "Email already exists!!", data: {}, http_code: 400});
+                }else {
+                  let query = "INSERT INTO `employee` (`name`, `mobile`, `email`,bcrypt_password, `salary`, `leave_credit`, `start_date`, `increament_date`, `document`, `modified_on`, `created_on`) ";
+                  query += " VALUES ("+connection.escape(body.name)+","+connection.escape(body.mobile)+","+connection.escape(body.email)+",";
+                  query += " "+connection.escape(hash)+", ";
+                  query += " "+body.salary+","+body.leave_credit+","+start_date+","+increament_date+","+connection.escape(body.document)+","+env.timestamp()+","+env.timestamp()+")";
+                  connection.query(query, function (error, result) {
+                    if (error) {
+                      console.log("Error#003 in 'superadminService.js'", error, query);
+                      callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
+                    } else {
+                      var employee_id=result.insertId;
+                      callback(null, {status: true,message: "Employee details saved successfully!!",data: employee_id,http_code: 200});
+                    }
+                  });
+                }
               }
             });
           }
@@ -158,13 +178,8 @@ const superadminService = {
       // if only user is selected then get a user today worksheet
       let monthly = body.monthly, daily = body.daily, date = body.date, userid = body.id;
       // today start date
-      var start = new Date();
-      start.setHours(0,0,0,0);
-      var start_date = +new Date(start);
-      // today end date
-      var end = new Date();
-      end.setHours(23,59,59,999);
-      var end_date = +new Date(end);
+      var start_date = setDateStartAndEndTime(false,true);
+      var end_date = setDateStartAndEndTime(false,false);
       let whereCondition = " a.date >= "+start_date+" AND a.date <= "+end_date+" ";
       // check and create monthly where condition
       if(monthly){
@@ -173,13 +188,9 @@ const superadminService = {
         whereCondition = " a.date >= "+firstDay+" AND a.date <= "+lastDay+" ";
       }else if (daily) {
         // check and create daily where condition
-        start = date;
-        start.setHours(0,0,0,0);
-        start_date = +new Date(start);
+        start_date = setDateStartAndEndTime(date,true);
         // today end date
-        end = date;
-        end.setHours(23,59,59,999);
-        end_date = +new Date(end);
+        end_date = setDateStartAndEndTime(date,false);
         whereCondition = " a.date >= "+start_date+" AND a.date <= "+end_date+" ";
       }
       // check if user is selected then add where condition for a user
@@ -232,7 +243,7 @@ const superadminService = {
           callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
         } else {
           let monthlist = [];
-          let start_date = result && result.length > 0 ? result[0].start_date : (+new Date());
+          let start_date = result && result.length > 0 ? result[0].start_date ? result[0].start_date : (+new Date()) : (+new Date());
           let first_date = new Date(+start_date);
           let today_date = new Date();
           // check if worksheet minimum date's month and year is same as today date then only current month will be return
@@ -252,12 +263,13 @@ const superadminService = {
     },
 
     addUpdateBusinessHolidays : function(body,callback){
+      var date = setDateStartAndEndTime(body.date,true);
       let query = "";
       if(body.row_id){
-        query = "UPDATE `holidays` SET `name`="+connection.escape(body.name)+",`date`="+body.date+",`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id;
+        query = "UPDATE `holidays` SET `name`="+connection.escape(body.name)+",`date`="+date+",`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id;
       }else {
         query = "INSERT INTO `holidays`(`name`, `date`, `created_on`, `modified_on`) ";
-        query += " VALUES ("+connection.escape(body.name)+","+body.date+","+env.timestamp()+","+env.timestamp()+")";
+        query += " VALUES ("+connection.escape(body.name)+","+date+","+env.timestamp()+","+env.timestamp()+")";
       }
       connection.query(query, function (error, result) {
         if (error) {
@@ -289,13 +301,9 @@ const superadminService = {
       let year = body.year ? parseInt(body.year) : new Date().getFullYear();
       let start_date = year +"-01-01";
       let end_date = year +"-12-31";
-      var start = new Date(start_date);
-      start.setHours(0,0,0,0);
-      var sdate = +new Date(start);
+      var sdate = setDateStartAndEndTime(start_date,true);
       // today end date
-      var end = new Date(end_date);
-      end.setHours(23,59,59,999);
-      var edate = +new Date(end);
+      var edate = setDateStartAndEndTime(end_date,false);
       let query = "SELECT *,dayofweek(DATE_FORMAT(FROM_UNIXTIME(date/1000), '%Y-%m-%d')) as day FROM `holidays` WHERE `date` >= "+sdate+" AND `date` <= "+edate;
       connection.query(query, function (error, result) {
         if (error) {
@@ -308,7 +316,7 @@ const superadminService = {
     },
 
     getLeaveApplicationList : function(body,callback){
-      let date = body.date ? body.date : (+new Date());
+      let date = body.date ? new Date(body.date) : (new Date());
       var firstDay = +new Date(date.getFullYear(), date.getMonth(), 1);
       var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
       let whereCondition = "";
@@ -362,6 +370,16 @@ function ValidateEmail(mail) {
       return true;
   }
   return false;
+}
+
+function setDateStartAndEndTime(date,start_time){
+  var start = date ? new Date(date) : new Date();
+  if(start_time){
+    start.setHours(0,0,0,0);
+  }else {
+    start.setHours(23,59,59,999);
+  }
+  return +new Date(start);
 }
 
 // 1. hr login
