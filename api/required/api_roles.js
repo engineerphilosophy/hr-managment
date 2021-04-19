@@ -26,6 +26,8 @@ var api_list = {
   'getEmployeesDailyWorkByDate':['employee'],
   'updatePassword':['employee'],
   'getLeaveApplicationListByEmployee':['employee'],
+  'deleteDailyWorkData':['employee'],
+  'deleteLeaveApplication':['employee'],
   ////////// employee api end //////////
 };
 

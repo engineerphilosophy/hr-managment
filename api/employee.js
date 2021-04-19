@@ -180,7 +180,7 @@ router.get('/getEmployeesDailyWorksheetData', function(req, res) {
  * @apiHeader {String} Authorization user token
  *
  * @apiParam {Number} date timestamp date of work
- * @apiParam {Array} work_data array of objects consist of row_id (if editing else 0),module,description,start_time,end_time
+ * @apiParam {Array} workArray array of objects consist of row_id (if editing else 0),module,description,start_time,end_time
  *
  *
  * @apiSuccess {Boolean} status true.
@@ -236,7 +236,6 @@ router.post('/addUpdateDailyWorkData', function(req, res) {
  * @apiParam {Number} description leave application description
  * @apiParam {Number} date_from leave start date
  * @apiParam {Number} date_to leave end date
- * @apiParam {Number} total_days total leave days
  *
  *
  * @apiSuccess {Boolean} status true.
@@ -268,14 +267,25 @@ router.post('/addUpdateDailyWorkData', function(req, res) {
  *     }
  */
 router.post('/addUpdateLeaveApplication', function(req, res) {
-  employeeService.addUpdateLeaveApplication(req.body,function (error,data_response) {
-    if (error) {
-      console.log('error in addUpdateLeaveApplication---employee.js-',error);
-      res.json(data_response);
-    } else {
-      res.json(data_response);
-    }
-  });
+  if(req.body.row_id){
+    employeeService.updateLeaveApplication(req.body,function (error,data_response) {
+      if (error) {
+        console.log('error in updateLeaveApplication---employee.js-',error);
+        res.json(data_response);
+      } else {
+        res.json(data_response);
+      }
+    });
+  }else {
+    employeeService.addLeaveApplication(req.body,function (error,data_response) {
+      if (error) {
+        console.log('error in addLeaveApplication---employee.js-',error);
+        res.json(data_response);
+      } else {
+        res.json(data_response);
+      }
+    });
+  }
 });
 /**
  * @api {get} /employee/getEmployeesDailyWorkByDate get employees daily work data by date
@@ -434,6 +444,108 @@ router.get('/getLeaveApplicationListByEmployee', function(req, res) {
   superadminService.getLeaveApplicationList(req.body,function (error,data_response) {
     if (error) {
       console.log('error in getLeaveApplicationListByEmployee---employee-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+
+/**
+ * @api {post} /employee/deleteDailyWorkData delete daily work data by row ids
+ * @apiName deleteDailyWorkData
+ * @apiGroup employee
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Array} row_ids ids of work
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Array} data  [].
+ * @apiSuccess {String} Work data deleted successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Work data deleted successfully!!",
+ *       "data": {},
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in deleting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in deleting data!!",
+ *       "data": {},
+ *     }
+ */
+
+router.post('/deleteDailyWorkData', function (req, res) {
+  employeeService.deleteDailyWorkData(req.body, function (error, data_response) {
+    if (error) {
+      console.log('error in deleteDailyWorkData---employee.js-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+
+/**
+ * @api {post} /employee/deleteLeaveApplication delete leave application by row id
+ * @apiName deleteLeaveApplication
+ * @apiGroup employee
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Number} row_id application row id
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Array} data  [].
+ * @apiSuccess {String} Work data deleted successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Work data deleted successfully!!",
+ *       "data": {},
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in deleting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in deleting data!!",
+ *       "data": {},
+ *     }
+ */
+
+router.post('/deleteLeaveApplication', function (req, res) {
+  employeeService.deleteLeaveApplication(req.body, function (error, data_response) {
+    if (error) {
+      console.log('error in deleteLeaveApplication---employee.js-',error);
       res.json(data_response);
     } else {
       res.json(data_response);

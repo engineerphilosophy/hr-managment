@@ -92,7 +92,7 @@ const superadminService = {
       var increament_date = setDateStartAndEndTime(body.increament_date,true);
       if(mailvalid){
         const employeeService = require('../services/employeeService');
-        employeeService.getEmployeeDetailsByEmail(body.email,function(error,response){
+        employeeService.getEmployeeDetailsByEmail(body.email,false,function(error,response){
           if (error) {
             console.log("Error#0014 in 'superadminService.js'", error);
             callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
@@ -148,7 +148,8 @@ const superadminService = {
     },
 
     endEmployeeSession : function(body,callback){
-      let query = "UPDATE `employee` SET `end_date`= "+body.end_date+",`modified_on`= "+env.timestamp()+" WHERE `userid`= "+body.id;
+      var end_date = setDateStartAndEndTime(body.end_date,true);
+      let query = "UPDATE `employee` SET `end_date`= "+end_date+",`modified_on`= "+env.timestamp()+" WHERE `userid`= "+body.id;
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#005 in 'superadminService.js'", error, query);
@@ -178,6 +179,7 @@ const superadminService = {
       // if only user is selected then get a user today worksheet
       let monthly = body.monthly, daily = body.daily, date = body.date, userid = body.id;
       // today start date
+      date = date ? new Date(date) : new Date();
       var start_date = setDateStartAndEndTime(false,true);
       var end_date = setDateStartAndEndTime(false,false);
       let whereCondition = " a.date >= "+start_date+" AND a.date <= "+end_date+" ";
@@ -250,7 +252,7 @@ const superadminService = {
           if(first_date.getMonth() == today_date.getMonth() && first_date.getFullYear() == today_date.getFullYear()){
             monthlist.push({
               name:monthnamelist[first_date.getMonth()]+" "+first_date.getFullYear(),
-              date:first_date,
+              date: +new Date(first_date),
               month: first_date.getMonth()+1,
               year: first_date.getFullYear()
             });

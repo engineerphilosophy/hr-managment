@@ -15,8 +15,9 @@ const superadminService = require('../services/superadminService');
 const saltRounds = 10;
 const employeeService = {
     //@Manglesh
-    getEmployeeDetailsByEmail : function(email_address,callback){
-      let query1 = "SELECT `userid`, `name`, `mobile`, `email`, `salary`, `leave_credit`, `start_date`, `end_date`, `increament_date`, `document`, `modified_on`, `created_on` FROM `employee` WHERE email = ?";
+    getEmployeeDetailsByEmail : function(email_address,select_password,callback){
+      let password_string = select_password ? ",bcrypt_password " : "";
+      let query1 = "SELECT `userid`, `name`, `mobile` "+password_string+", `email`, `salary`, `leave_credit`, `start_date`, `end_date`, `increament_date`, `document`, `modified_on`, `created_on` FROM `employee` WHERE email = ?";
       connection.query(query1,[email_address],function(error,result){
         if(error){
           console.log("Error#001 in 'employeeService.js'",error,query1);
@@ -32,7 +33,7 @@ const employeeService = {
     },
     //@Manglesh
     loginEmployee : function(body,callback){
-      employeeService.getEmployeeDetailsByEmail(body.username,function(error,result_data){
+      employeeService.getEmployeeDetailsByEmail(body.username,true,function(error,result_data){
         if(error){
           console.log("Error#001 in 'employeeService.js'",error);
           callback(error,{status:false,message:"Error in getting data!!",data:false,http_code:400});
@@ -50,7 +51,6 @@ const employeeService = {
                 if(matched){
                   //password matched let the user access system.
                   var resdata = {};
-                  delete profile.bcrypt_password;
                   var userprofile = [profile];
                   userprofile[0].user_type = 'employee';
                   var token = common_functions.genToken(userprofile);
@@ -59,7 +59,7 @@ const employeeService = {
                   callback(null,{status:true,message:"Employee logged-in successfully!!",data:resdata,http_code:200});
                   //insert into logged_in_user table
                   var query = "insert into logged_in_users (userid,user_type,email_address,token) values "
-                  query += "(" + userprofile[0].userid + ",'employee','" + val[0].email + "','" + token + "')";
+                  query += "(" + userprofile[0].userid + ",'employee','" + userprofile[0].email + "','" + token + "')";
                   connection.query(query, function(error, result) {
                     if (error) {
                       console.log("Error:#S002 in 'employeeService.js'",error,query);
@@ -117,7 +117,7 @@ const employeeService = {
     },
 
     addUpdateDailyWorkData : function(body,callback){
-      let date = body.date, userid = body.userid, work_data = body.work_data;
+      let date = body.date, userid = body.userid, work_data = body.workArray;
       let row_ids = underscore.unique(underscore.pluck(work_data,'row_id'));
       let filteredIds = row_ids.filter(function(d){
         if(d){
@@ -133,17 +133,20 @@ const employeeService = {
           let existingIds = underscore.unique(underscore.pluck(resposne.data,'row_id'));
           async.eachOfSeries(work_data,function(row,index,cb){
             let insertQuery = "";
+            let start_time = generateDateTime(date,row.start_time);
+            let end_time = generateDateTime(date,row.end_time);
+            date = generateDateTime(date);
             if(row.row_id){
               if(existingIds.indexOf(row.row_id) > -1){
                 // remove those row ids which are already existings, then we will delete left ids from existingIds array
                 existingIds.splice(existingIds.indexOf(row.row_id), 1);
               }
               // row_id exist then update the row
-              insertQuery = "UPDATE `employee_worksheet` SET `module`="+connection.escape(row.module)+",`description`="+connection.escape(row.description)+",`date`="+date+",`start_time`="+connection.escape(row.start_time)+",`end_time`="+connection.escape(row.end_time)+",`modified_on`= "+env.timestamp()+" WHERE row_id = "+row.row_id+" and userid = "+userid+" ";
+              insertQuery = "UPDATE `employee_worksheet` SET `module`="+connection.escape(row.module)+",`description`="+connection.escape(row.description)+",`date`="+date+",`start_time`="+connection.escape(start_time)+",`end_time`="+connection.escape(end_time)+",`modified_on`= "+env.timestamp()+" WHERE row_id = "+row.row_id+" and userid = "+userid+" ";
             }else {
               // insert data for new row
               insertQuery = "INSERT INTO `employee_worksheet`(`userid`, `module`, `description`, `date`, `start_time`, `end_time`, `created_on`, `modified_on`) ";
-              insertQuery += " VALUES ("+userid+","+connection.escape(row.module)+","+connection.escape(row.description)+","+date+","+connection.escape(row.start_time)+","+connection.escape(row.end_time)+","+env.timestamp()+","+env.timestamp()+")";
+              insertQuery += " VALUES ("+userid+","+connection.escape(row.module)+","+connection.escape(row.description)+","+date+","+connection.escape(start_time)+","+connection.escape(end_time)+","+env.timestamp()+","+env.timestamp()+")";
             }
             connection.query(insertQuery,function(error,result){
               if(error){
@@ -178,6 +181,22 @@ const employeeService = {
       });
     },
 
+    deleteDailyWorkData : function(body,callback){
+      if(body.row_ids && body.row_ids.length > 0){
+        let query = "DELETE FROM `employee_worksheet` WHERE `row_id` IN ("+body.row_ids+") AND `userid`="+body.userid;
+        connection.query(query, function (error, result) {
+          if (error) {
+            console.log("Error#009 in 'superadminService.js'", error, query);
+            callback(error, {status: false, message: "Error in deleting data!!", data: {}, http_code: 400});
+          } else {
+            callback(null, {status: true,message: "Work data deleted successfully!!",data: {},http_code: 200});
+          }
+        });
+      }else {
+        callback(null, {status: false,message: "Holiday ids not found!!",data: {},http_code: 400});
+      }
+    },
+
     getWorksheetDataByRowIds : function(rowIds,userid,callback){
       if(rowIds && rowIds.length){
         let query = "select * from employee_worksheet where row_id IN ("+rowIds+") and userid = "+userid;
@@ -196,14 +215,14 @@ const employeeService = {
 
     getEmployeesDailyWorkByDate : function(body,callback){
       let date = body.date;
-      let start = new Date(date);
+      let start = new Date(+date);
       start.setHours(0,0,0,0);
       var sdate = +new Date(start);
       // end date
-      let end = new Date(date);
+      let end = new Date(+date);
       end.setHours(23,59,59,999);
       var edate = +new Date(end);
-      let query = "select * from employee_worksheet where `date` >= "+sdate+" AND `date` <= "+edate+" and userid = "+userid;
+      let query = "select * from employee_worksheet where `date` >= "+sdate+" AND `date` <= "+edate+" and userid = "+body.userid;
       connection.query(query,function(error,result){
         if(error){
           console.log("Error#003 in 'employeeService.js'",error,query);
@@ -214,12 +233,14 @@ const employeeService = {
       });
     },
 
-    addUpdateLeaveApplication : function(body,callback){
+    addLeaveApplication : function(body,callback){
       let userid = body.userid;
-      let date_from = +body.date_from;
-      let date_to = +body.date_to;
+      let date_from = body.date_from;
+      let date_to = body.date_to;
       let start_date = new Date(date_from);
       let end_date = new Date(date_to);
+      start_date = new Date(setDateStartAndEndTime(start_date,true));
+      end_date = new Date(setDateStartAndEndTime(end_date,false));
       let datesArray = getDates(start_date, end_date);
       // if datesArray is empty then start date and end dates are same then push start date in array.
       if(datesArray.length==0){
@@ -244,9 +265,11 @@ const employeeService = {
               // if holiday then do not add row
               cb();
             }else {
-              // insertQuery = "UPDATE `leave_application` SET `description`="+connection.escape(body.description)+",`date_from`="+body.date_from+",`date_to`="+body.date_from+",`total_days`=1,`modified_on`="+env.timestamp()+" WHERE row_id = "+body.row_id+" and userid = "+userid+" ";
+              let sdate = setDateStartAndEndTime(single_date,true);
+              let edate = setDateStartAndEndTime(single_date,false);
+
               let insertQuery = "INSERT INTO `leave_application`(`userid`, `description`, `date_from`, `date_to`, `total_days`, `approve_status`, `created_on`, `modified_on`) ";
-              insertQuery += " VALUES ("+userid+","+connection.escape(body.description)+","+single_date+","+single_date+",1,0,"+env.timestamp()+","+env.timestamp()+")";
+              insertQuery += " VALUES ("+userid+","+connection.escape(body.description)+","+sdate+","+edate+",1,0,"+env.timestamp()+","+env.timestamp()+")";
               connection.query(insertQuery,function(error,result){
                 if(error){
                   console.log("Error#002 in 'employeeService.js'",error,insertQuery);
@@ -261,10 +284,30 @@ const employeeService = {
         });
       },function(error){
         if(error){
-          console.log("Error#0021 in 'employeeService.js'",error,insertQuery);
+          console.log("Error#0021 in 'employeeService.js'",error);
           callback(error,{status:false,message:"Error in saving data!!",data:false,http_code:400});
         }else{
-          callback(null,{status:true,message:"Leave application saved successfully!!",data:result.insertId,http_code:200});
+          callback(null,{status:true,message:"Leave application saved successfully!!",data:{},http_code:200});
+        }
+      });
+    },
+
+    updateLeaveApplication : function(body,callback){
+      let userid = body.userid;
+      let row_id = body.row_id;
+      let date_from = body.date_from;
+      let date_to = body.date_to;
+      let start_date = new Date(date_from);
+      let end_date = new Date(date_from);
+      start_date = +new Date(setDateStartAndEndTime(start_date,true));
+      end_date = +new Date(setDateStartAndEndTime(end_date,false));
+      let updateQuery = "UPDATE `leave_application` SET `description`="+connection.escape(body.description)+",`date_from`="+start_date+",`date_to`="+end_date+",`total_days`=1,`modified_on`="+start_date+" WHERE `row_id` = "+row_id+" AND `userid` = "+userid;
+      connection.query(updateQuery, function (error, result) {
+        if (error) {
+          console.log("Error#0064 in 'employeeService.js'", error, updateQuery);
+          callback(error, {status: false, message: "Error in saving data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "Leave application updated successfully!!",data: [],http_code: 200});
         }
       });
     },
@@ -342,4 +385,32 @@ function getDates(startDate, stopDate) {
 function addDays(date,days) {
   date.setDate(date.getDate() + days);
   return date;
+}
+
+function generateDateTime(date,time,end){
+  let newDate = new Date(date);
+  if(end){
+    newDate.setHours(23,59,59,999);
+  }else {
+    newDate.setHours(0,0,0,0);
+  }
+  let start_date = +new Date(newDate);
+  if(time){
+    let timeArray = time ? time.split(':') : [];
+    let hour = 60*60*1000*(parseInt(timeArray[0]));
+    let minute = 60*1000*(parseInt(timeArray[1]));
+    return (start_date + hour + minute);
+  }else {
+    return start_date;
+  }
+}
+
+function setDateStartAndEndTime(date,start_time){
+  var start = date ? new Date(date) : new Date();
+  if(start_time){
+    start.setHours(0,0,0,0);
+  }else {
+    start.setHours(23,59,59,999);
+  }
+  return +new Date(start);
 }
