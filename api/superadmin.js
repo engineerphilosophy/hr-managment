@@ -179,6 +179,7 @@ router.post('/endEmployeeSession', function(req, res) {
  * @apiHeader {String} Authorization user token
  *
  * @apiParam {Number} id employee id
+ * @apiParam {Array} row_ids array of application ids
  *
  * @apiSuccess {Boolean} status true.
  * @apiSuccess {Number} http_code  200.

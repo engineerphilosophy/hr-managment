@@ -161,15 +161,19 @@ const superadminService = {
     },
 
     approveLeaveApplication : function(body,callback){
-      let query = "UPDATE `leave_application` SET `approve_status`= 1,`modified_on`= "+env.timestamp()+" WHERE `userid`="+body.id;
-      connection.query(query, function (error, result) {
-        if (error) {
-          console.log("Error#006 in 'superadminService.js'", error, query);
-          callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
-        } else {
-          callback(null, {status: true,message: "Employee leave application approved successfully!!",data: body.id,http_code: 200});
-        }
-      });
+      if(body.row_ids && body.row_ids.length > 0){
+        let query = "UPDATE `leave_application` SET `approve_status`= 1,`modified_on`= "+env.timestamp()+" WHERE `userid`="+body.id+" and row_id IN ("+body.row_ids+")";
+        connection.query(query, function (error, result) {
+          if (error) {
+            console.log("Error#006 in 'superadminService.js'", error, query);
+            callback(error, {status: false, message: "Error in saving data!!", data: {}, http_code: 400});
+          } else {
+            callback(null, {status: true,message: "Employee leave applications approved successfully!!",data: {},http_code: 200});
+          }
+        });
+      }else {
+        callback(null, {status: false, message: "No data found!!", data: {}, http_code: 400});
+      }
     },
 
     getEmployeesDailyWorksheetData : function(body,callback){
