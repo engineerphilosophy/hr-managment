@@ -228,12 +228,10 @@ const superadminService = {
       let whereCondition = " a.date >= "+start_date+" AND a.date <= "+end_date+" ";
       // check and create monthly where condition
       if(monthly == true || monthly == "true"){
-        console.log('come in monthly',monthly,typeof monthly);
         var firstDay = +new Date(date.getFullYear(), date.getMonth(), 1);
         var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
         whereCondition = " a.date >= "+firstDay+" AND a.date <= "+lastDay+" ";
       }else if (daily == true || daily == "true") {
-        console.log('come in daily',daily);
         // check and create daily where condition
         start_date = setDateStartAndEndTime(date,true);
         // today end date
