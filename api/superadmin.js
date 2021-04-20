@@ -178,7 +178,7 @@ router.post('/endEmployeeSession', function(req, res) {
  *
  * @apiHeader {String} Authorization user token
  *
- * @apiParam {Number} id employee id
+ * @apiParam {Number} status status of application
  * @apiParam {Array} row_ids array of application ids
  *
  * @apiSuccess {Boolean} status true.
@@ -548,6 +548,58 @@ router.get('/getLeaveApplicationList', function(req, res) {
   superadminService.getLeaveApplicationList(req.body,function (error,data_response) {
     if (error) {
       console.log('error in getLeaveApplicationList---superadmin-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+/**
+ * @api {post} /superadmin/updatePassword update the password of superadmin.
+ * @apiName updatePassword
+ * @apiGroup superadmin
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {String} current current password
+ * @apiParam {Number} id id of superadmin
+ * @apiParam {String} password new password for superadmin
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Array} data  [].
+ * @apiSuccess {String} Password updated successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Password updated successfully!!",
+ *       "data": {},
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in saving data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in saving data!!",
+ *       "data": {},
+ *     }
+ */
+
+router.post('/updatePassword', function (req, res) {
+  superadminService.updatepassword(req.body, function (error, data_response) {
+    if (error) {
+      console.log('error in updatePassword---superadmin.js-',error);
       res.json(data_response);
     } else {
       res.json(data_response);

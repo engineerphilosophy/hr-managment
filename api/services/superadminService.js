@@ -57,6 +57,44 @@ const superadminService = {
       });
     },
 
+    updatepassword : function(body,callback){
+      var query = "select userid,bcrypt_password,username,useremail from superadmin where userid = " + body.userid;
+      connection.query(query, function (error, result) {
+        if(error){
+          console.log("Error#0011 in 'superadminService.js'",error,query);
+          callback(error,{status:false,message:"Error in saving data!!",data:[],http_code:400});
+        }else{
+          if(result && result.length > 0){
+            let bcrypt_password = result[0].bcrypt_password;
+            if (bcrypt_password !== '') {
+              bcrypt.compare(body.current, bcrypt_password, function (err, matched) {
+                if (matched) {
+                  bcrypt.hash(body.password, saltRounds, function (err, hash) {
+                    let new_bcrypt_password = hash;
+                    let updateQuery = "UPDATE `superadmin` SET `bcrypt_password`="+connection.escape(new_bcrypt_password)+" WHERE `userid`= "+body.id;
+                    connection.query(updateQuery,function(error,result1){
+                      if(error){
+                        console.log("Error#0012 in 'superadminService.js'",error,updateQuery);
+                        callback(error,{status:false,message:"Error in saving data!!",data:[],http_code:400});
+                      }else{
+                        callback(null,{status:true,message:"Password updated successfully!!",data:[],http_code:400});
+                      }
+                    });
+                  });
+                }else {
+                  callback(null,{status:false,message:"Wrong current password!!",data:[],http_code:400});
+                }
+              });
+            }else {
+              callback(null,{status:false,message:"Wrong current password!!",data:[],http_code:400});
+            }
+          }else {
+            callback(null,{status:false,message:"Superadmin not found!!",data:[],http_code:400});
+          }
+        }
+      });
+    },
+
     getEmployeeList : function(body,callback){
       let query = "SELECT `userid`, `name`, `mobile`, `email`, `salary`, `leave_credit`, `start_date`, `end_date`, `increament_date`, `document`, `modified_on`, `created_on` FROM `employee` ORDER BY userid DESC";
       connection.query(query, function (error, result) {
@@ -162,7 +200,8 @@ const superadminService = {
 
     approveLeaveApplication : function(body,callback){
       if(body.row_ids && body.row_ids.length > 0){
-        let query = "UPDATE `leave_application` SET `approve_status`= 1,`modified_on`= "+env.timestamp()+" WHERE `userid`="+body.id+" and row_id IN ("+body.row_ids+")";
+        body.status = body.status ? body.status : 0;
+        let query = "UPDATE `leave_application` SET `approve_status`= "+body.status+",`modified_on`= "+env.timestamp()+" WHERE row_id IN ("+body.row_ids+")";
         connection.query(query, function (error, result) {
           if (error) {
             console.log("Error#006 in 'superadminService.js'", error, query);
@@ -188,11 +227,13 @@ const superadminService = {
       var end_date = setDateStartAndEndTime(false,false);
       let whereCondition = " a.date >= "+start_date+" AND a.date <= "+end_date+" ";
       // check and create monthly where condition
-      if(monthly){
+      if(monthly == true || monthly == "true"){
+        console.log('come in monthly',monthly,typeof monthly);
         var firstDay = +new Date(date.getFullYear(), date.getMonth(), 1);
         var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
         whereCondition = " a.date >= "+firstDay+" AND a.date <= "+lastDay+" ";
-      }else if (daily) {
+      }else if (daily == true || daily == "true") {
+        console.log('come in daily',daily);
         // check and create daily where condition
         start_date = setDateStartAndEndTime(date,true);
         // today end date

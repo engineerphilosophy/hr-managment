@@ -24,7 +24,7 @@ var api_list = {
   'getEmployeesDailyWorkById':['employee'],
   'addUpdateDailyWorkData':['employee'],
   'getEmployeesDailyWorkByDate':['employee'],
-  'updatePassword':['employee'],
+  'updatePassword':['employee','superadmin'],
   'getLeaveApplicationListByEmployee':['employee'],
   'deleteDailyWorkData':['employee'],
   'deleteLeaveApplication':['employee'],
