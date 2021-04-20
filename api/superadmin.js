@@ -648,14 +648,14 @@ router.post('/updatePassword', function (req, res) {
  *       "data": {},
  *     }
  */
-router.get('/downloadFile',function(req,res){
-  res.download('uploads/documents/'req.body.filename,function(err){
-    if(err){
-      console.log("error -= ",err);
-      res.jsonp({status:false,message:"file not found!!",data:{},http_code:400});
-    }else{
-      console.log("success");
-    }
-  });
-});
+// router.get('/downloadFile',function(req,res){
+//   res.download('uploads/documents/'req.body.filename,function(err){
+//     if(err){
+//       console.log("error -= ",err);
+//       res.jsonp({status:false,message:"file not found!!",data:{},http_code:400});
+//     }else{
+//       console.log("success");
+//     }
+//   });
+// });
 module.exports = router;
