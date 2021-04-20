@@ -17,6 +17,7 @@ var api_list = {
   'getLeaveApplicationList':['superadmin'],
   'getBusinessHolidayList':['superadmin','employee'],
   'logout':['superadmin','employee'],
+  'downloadFile':['superadmin'],
   ////////// super admin api end //////////
   ////////// employee api start //////////
   'addUpdateDailyWorkData':['employee'],

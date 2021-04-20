@@ -118,6 +118,7 @@ const employeeService = {
 
     addUpdateDailyWorkData : function(body,callback){
       let date = body.date, userid = body.userid, work_data = body.workArray;
+      let deleted_ids = body.deleted_ids;
       let row_ids = underscore.unique(underscore.pluck(work_data,'row_id'));
       let filteredIds = row_ids.filter(function(d){
         if(d){
@@ -141,6 +142,11 @@ const employeeService = {
                 // remove those row ids which are already existings, then we will delete left ids from existingIds array
                 existingIds.splice(existingIds.indexOf(row.row_id), 1);
               }
+              if(deleted_ids.indexOf(row.row_id) > -1){
+                // remove those row ids which are already existings, then we will delete left ids from existingIds array
+                deleted_ids.splice(deleted_ids.indexOf(row.row_id), 1);
+              }
+
               // row_id exist then update the row
               insertQuery = "UPDATE `employee_worksheet` SET `module`="+connection.escape(row.module)+",`description`="+connection.escape(row.description)+",`date`="+date+",`start_time`="+connection.escape(start_time)+",`end_time`="+connection.escape(end_time)+",`modified_on`= "+env.timestamp()+" WHERE row_id = "+row.row_id+" and userid = "+userid+" ";
             }else {
@@ -161,9 +167,9 @@ const employeeService = {
               console.log("Error#001 in 'employeeService.js'",error);
               callback(error,{status:false,message:"#001:Error in saving data!!",data:false,http_code:400});
             }else{
-              if(existingIds && existingIds.length > 0){
+              if(deleted_ids && deleted_ids.length > 0){
                 // delete row ids which are not existing any more
-                let deleteQuery = "DELETE FROM `employee_worksheet` WHERE `row_id` IN ("+existingIds+") AND `userid`="+userid;
+                let deleteQuery = "DELETE FROM `employee_worksheet` WHERE `row_id` IN ("+deleted_ids+") AND `userid`="+userid;
                 connection.query(deleteQuery,function(error,result){
                   if(error){
                     console.log("Error#005 in 'employeeService.js'",error,deleteQuery);

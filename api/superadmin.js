@@ -606,4 +606,56 @@ router.post('/updatePassword', function (req, res) {
     }
   });
 });
+/**
+ * @api {get} /employee/downloadFile download file
+ * @apiName downloadFile
+ * @apiGroup employee
+ *
+ * @apiAuthor Manglesh Patel - 08/04/2021
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {String} filename filename which is to download
+ *
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message leave application list found successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "leave application list found successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in getting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in getting data!!",
+ *       "data": {},
+ *     }
+ */
+router.get('/downloadFile',function(req,res){
+  res.download('uploads/documents/'req.body.filename,function(err){
+    if(err){
+      console.log("error -= ",err);
+      res.jsonp({status:false,message:"file not found!!",data:{},http_code:400});
+    }else{
+      console.log("success");
+    }
+  });
+});
 module.exports = router;

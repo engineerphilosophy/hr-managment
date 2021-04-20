@@ -180,6 +180,7 @@ router.get('/getEmployeesDailyWorksheetData', function(req, res) {
  * @apiHeader {String} Authorization user token
  *
  * @apiParam {Number} date timestamp date of work
+ * @apiParam {Array} deleted_ids row ids of deleted rows when editing
  * @apiParam {Array} workArray array of objects consist of row_id (if editing else 0),module,description,start_time,end_time
  *
  *
