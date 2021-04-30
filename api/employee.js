@@ -553,4 +553,55 @@ router.post('/deleteLeaveApplication', function (req, res) {
     }
   });
 });
+
+/**
+ * @api {get} /employee/getEmployeeReportCard get employee report card
+ * @apiName getEmployeeReportCard
+ * @apiGroup employee
+ *
+ * @apiAuthor Manglesh Patel - 08/04/2021
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message employee report found successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "employee report list found successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in getting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in getting data!!",
+ *       "data": {},
+ *     }
+ */
+router.get('/getEmployeeReportCard', function(req, res) {
+  employeeService.getEmployeeReportCard(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in getEmployeeReportCard---employee-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
 module.exports = router;

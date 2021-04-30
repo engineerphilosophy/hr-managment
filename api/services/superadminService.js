@@ -258,17 +258,16 @@ const superadminService = {
     },
 
     getAllEmployeeReportCard : function(body,callback){
-      let date = body.date ? body.date : (+new Date());
+      let date = body.date ? new Date(body.date) : (new Date());
       var firstDay = +new Date(date.getFullYear(), date.getMonth(), 1);
       var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
-      let query = "SELECT COUNT(DISTINCT a.date) as total_working_days,SUM(c.total_days) as total_days,c.date_from,c.date_to,b.name, b.email,b.mobile,b.leave_credit ";
-      query += " FROM `employee_worksheet` as a ";
-      query += " LEFT JOIN employee as b ON a.userid = b.userid ";
-      query += " LEFT JOIN (SELECT * FROM `leave_application` WHERE (`date_from` >= "+firstDay+" AND `date_from` <= 1619721000000) OR (`date_to` >= "+firstDay+" AND `date_to` <= "+lastDay+")) as c ON a.userid = c.userid ";
-      query += " WHERE  a.date >= "+firstDay+" AND a.date <= "+lastDay+" group by a.userid ";
-      connection.query(query, function (error, result) {
+      let leaveQuery = "SELECT COUNT(*) as total_employee,SUM(a.total_leave) as total_leave,SUM(a.approved) as approved,SUM(a.rejected) as rejected,SUM(a.pending) as pending FROM employee as em ";
+      leaveQuery += " LEFT JOIN (SELECT userid,COUNT(*) as total_leave,SUM(if(approve_status = 1, 1, 0)) as approved,SUM(if(approve_status = 2, 1, 0)) as rejected,SUM(if(approve_status = 0, 1, 0)) as pending FROM `leave_application` WHERE `date_from` >= "+firstDay+" AND `date_from` <= "+lastDay+" group by userid) ";
+      leaveQuery += " as a ON em.userid = a.userid ";
+      // leaveQuery += " GROUP BY em.userid ";
+      connection.query(leaveQuery, function (error, result) {
         if (error) {
-          console.log("Error#007 in 'superadminService.js'", error, query);
+          console.log("Error#007 in 'superadminService.js'", error, leaveQuery);
           callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
         } else {
           callback(null, {status: true,message: "Employee reports found successfully!!",data: result,http_code: 200});

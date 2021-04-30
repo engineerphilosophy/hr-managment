@@ -374,6 +374,25 @@ const employeeService = {
           }
         }
       });
+    },
+
+    getEmployeeReportCard : function(body,callback){
+      let userid = body.userid;
+      let todaydate = new Date();
+      var firstDay = +new Date(todaydate.getFullYear(), todaydate.getMonth(), 1);
+      var lastDay = +new Date(todaydate.getFullYear(), todaydate.getMonth() + 1, 0);
+      let leaveQuery = "SELECT em.*,a.total_leave,a.approved,a.rejected,a.pending FROM employee as em ";
+      leaveQuery += " LEFT JOIN (SELECT userid,COUNT(*) as total_leave,SUM(if(approve_status = 1, 1, 0)) as approved,SUM(if(approve_status = 2, 1, 0)) as rejected,SUM(if(approve_status = 0, 1, 0)) as pending FROM `leave_application` WHERE userid = "+userid+" AND `date_from` >= "+firstDay+" AND `date_from` <= "+lastDay+") ";
+      leaveQuery += " as a ON em.userid = a.userid ";
+      leaveQuery += " WHERE em.userid = "+userid+" ";
+      connection.query(leaveQuery, function (error, result) {
+        if (error) {
+          console.log("Error#0066 in 'employeeService.js'", error, leaveQuery);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "employee report found successfully!!",data: result,http_code: 200});
+        }
+      });
     }
 };
 module.exports = employeeService;
