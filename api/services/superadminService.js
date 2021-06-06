@@ -246,8 +246,8 @@ const superadminService = {
         whereCondition += " and a.userid = "+userid+" ";
       }
       let dates_string = superadminService.convertDateAccordingToOffset(['date','start_time','end_time'],offset,'a');
-      let query = "SELECT t.*, TIME_FORMAT(from_unixtime(t.start_time/1000),'%r') as formatted_start_time,TIME_FORMAT(from_unixtime(t.end_time/1000),'%r') as formatted_end_time ";
-      query += ",DATE_FORMAT(from_unixtime(t.date/1000),'%d/%m/%Y') as formatted_date,DATE_FORMAT(from_unixtime(t.date/1000),'%d %M') as date_month FROM ";
+      let query = "SELECT t.*, TIME_FORMAT(from_unixtime((t.start_time - "+offset+")/1000),'%r') as formatted_start_time,TIME_FORMAT(from_unixtime((t.end_time - "+offset+")/1000),'%r') as formatted_end_time ";
+      query += ",DATE_FORMAT(from_unixtime((t.date - "+offset+")/1000),'%d/%m/%Y') as formatted_date,DATE_FORMAT(from_unixtime((t.date - "+offset+")/1000),'%d %M') as date_month FROM ";
       query += "(SELECT a.`row_id`, a.`userid`, a.`module`, a.`description`, a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile, "+dates_string+" ";
       query += " FROM `employee_worksheet` as a ";
       query += " LEFT JOIN employee as b ON a.userid = b.userid ";
@@ -294,8 +294,8 @@ const superadminService = {
       if(offset>=0){
         offset_string = " + "+offset;
       }
-      let query = "SELECT t.*,TIME_FORMAT(from_unixtime(t.start_time/1000),'%r') as formatted_start_time,TIME_FORMAT(from_unixtime(t.end_time/1000),'%r') as formatted_end_time ";
-      query += ",DATE_FORMAT(from_unixtime(IF(date,date,ea_date)/1000),'%d-%m-%Y') as formatted_date,DATE_FORMAT(from_unixtime(IF(date,date,ea_date)/1000),'%d %M') as date_month ";
+      let query = "SELECT t.*,TIME_FORMAT(from_unixtime((t.start_time - "+offset+")/1000),'%r') as formatted_start_time,TIME_FORMAT(from_unixtime((t.end_time - "+offset+")/1000),'%r') as formatted_end_time ";
+      query += ",DATE_FORMAT(from_unixtime((IF(date,date,ea_date) - "+offset+")/1000),'%d-%m-%Y') as formatted_date,DATE_FORMAT(from_unixtime((IF(date,date,ea_date) - "+offset+")/1000),'%d %M') as date_month ";
       query += " FROM (SELECT ea.row_id as ea_id,(ea.date "+offset_string+") as ea_date,a.`row_id`, ea.`userid`, a.`module`, a.`description`,a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile,ea.status,"+dates_string+" ";
       query += " FROM `employee_attendance` as ea ";
       query += " LEFT JOIN employee_worksheet as a ON a.userid = ea.userid AND a.date = ea.date ";
@@ -442,7 +442,8 @@ const superadminService = {
       // today end date
       var edate = setDateStartAndEndTime(end_date,false);
       let dates_string = superadminService.convertDateAccordingToOffset(['date'],body.offset,'');
-      let query = "SELECT t.*,dayofweek(DATE_FORMAT(FROM_UNIXTIME(t.date/1000), '%Y-%m-%d')) as day FROM (SELECT `row_id`, `name`, "+dates_string+", `created_on`, `modified_on` FROM `holidays` WHERE `date` >= "+sdate+" AND `date` <= "+edate+" order by date desc) as t order by date desc";
+      let offset = body.offset ? body.offset : 0;
+      let query = "SELECT t.*,dayofweek(DATE_FORMAT(FROM_UNIXTIME((t.date - "+offset+")/1000), '%Y-%m-%d')) as day FROM (SELECT `row_id`, `name`, "+dates_string+", `created_on`, `modified_on` FROM `holidays` WHERE `date` >= "+sdate+" AND `date` <= "+edate+" order by date desc) as t order by date desc";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#010 in 'superadminService.js'", error, query);
