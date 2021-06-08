@@ -18,6 +18,7 @@ var api_list = {
   'getBusinessHolidayList':['superadmin','employee'],
   'logout':['superadmin','employee'],
   'downloadFile':['superadmin'],
+  'addPresentByUser':['superadmin'],
   ////////// super admin api end //////////
   ////////// employee api start //////////
   'addUpdateDailyWorkData':['employee'],

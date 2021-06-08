@@ -43,6 +43,7 @@ const zipupload = require('./zipupload');
  *     }
  */
 router.get('/getEmployeeList', function(req, res) {
+  req.body = Object.assign(req.body,req.query);
   superadminService.getEmployeeList(req.body,function (error,data_response) {
     if (error) {
       console.log('error in getEmployeeList---superadmin-',error);
@@ -600,6 +601,29 @@ router.post('/updatePassword', function (req, res) {
   superadminService.updatepassword(req.body, function (error, data_response) {
     if (error) {
       console.log('error in updatePassword---superadmin.js-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+
+router.get('/getEmployeesDailyWorksheetData', function(req, res) {
+  req.body = Object.assign(req.body,req.query);
+  superadminService.getEmployeesDailyWorksheetData(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in getEmployeesDailyWorksheetData---superadmin.js-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+
+router.post('/addPresentByUser', function(req, res) {
+  superadminService.addPresentByUser(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in addPresentByUser---superadmin.js-',error);
       res.json(data_response);
     } else {
       res.json(data_response);

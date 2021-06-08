@@ -167,20 +167,52 @@ const employeeService = {
               console.log("Error#001 in 'employeeService.js'",error);
               callback(error,{status:false,message:"#001:Error in saving data!!",data:false,http_code:400});
             }else{
-              if(deleted_ids && deleted_ids.length > 0){
-                // delete row ids which are not existing any more
-                let deleteQuery = "DELETE FROM `employee_worksheet` WHERE `row_id` IN ("+deleted_ids+") AND `userid`="+userid;
-                connection.query(deleteQuery,function(error,result){
-                  if(error){
-                    console.log("Error#005 in 'employeeService.js'",error,deleteQuery);
-                    callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
-                  }else{
+              body.status = 1;
+              employeeService.addUpdateEmployeeAttendence(body,function(error,response){
+                if(error){
+                  console.log("Error#005.1 in 'employeeService.js'",error,insertQuery);
+                  callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
+                }else{
+                  if(deleted_ids && deleted_ids.length > 0){
+                    // delete row ids which are not existing any more
+                    let deleteQuery = "DELETE FROM `employee_worksheet` WHERE `row_id` IN ("+deleted_ids+") AND `userid`="+userid;
+                    connection.query(deleteQuery,function(error,result){
+                      if(error){
+                        console.log("Error#005 in 'employeeService.js'",error,deleteQuery);
+                        callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
+                      }else{
+                        callback(null,{status:true,message:"Work data saved successfully!!",data:{},http_code:200});
+                      }
+                    });
+                  }else {
                     callback(null,{status:true,message:"Work data saved successfully!!",data:{},http_code:200});
                   }
-                });
-              }else {
-                callback(null,{status:true,message:"Work data saved successfully!!",data:{},http_code:200});
-              }
+                }
+              });
+            }
+          });
+        }
+      });
+    },
+
+    addUpdateEmployeeAttendence : function(body,callback){
+      let date = generateDateTime(body.date), userid = body.userid;
+      let status = body.status ? 1 : 0;
+      employeeService.getHolidayByGivenDate(date,function(error,response){
+        if(error){
+          console.log("Error#005.1 in 'employeeService.js'",error);
+          callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
+        }else {
+          let extra_day = response.data && response.data.length > 0 ? 1 : 0;
+          let insertQuery = "INSERT INTO `employee_attendance`(`userid`, `date`, `status`, extra_day,`modified_on`, `created_on`) ";
+          insertQuery += " VALUES ("+userid+","+date+","+status+","+extra_day+","+env.timestamp()+","+env.timestamp()+")";
+          insertQuery += " ON DUPLICATE KEY UPDATE modified_on= VALUES(modified_on) ";
+          connection.query(insertQuery,function(error,result){
+            if(error){
+              console.log("Error#005.1 in 'employeeService.js'",error,insertQuery);
+              callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
+            }else{
+              callback(null,{status:true,message:"Attendance added successfully!!",data:{},http_code:200});
             }
           });
         }
@@ -319,11 +351,11 @@ const employeeService = {
     },
 
     getHolidayByGivenDate : function(date,callback){
-      let start = date;
+      let start = new Date(date);
       start.setHours(0,0,0,0);
       var sdate = +new Date(start);
       // end date
-      let end = date;
+      let end = new Date(date);
       end.setHours(23,59,59,999);
       var edate = +new Date(end);
 
@@ -393,6 +425,44 @@ const employeeService = {
           callback(null, {status: true,message: "employee report found successfully!!",data: result,http_code: 200});
         }
       });
+    },
+
+    getEmployeeWorkingDayDetails : function(body,callback){
+      let from_date = body.from_date ? new Date(+body.from_date) : new Date();
+      let to_date = body.to_date ? new Date(+body.to_date) : new Date();
+      var start_date = setDateStartAndEndTime(+from_date,true);
+      var end_date = setDateStartAndEndTime(+to_date,false);
+
+      let total_days = employeeService.getDaysBetween2Dates(start_date,end_date);
+
+      let query = "SELECT em.userid,em.name,em.mobile,em.email,SUM(IF(ea.status = 0,1,0)) as absent, SUM(IF(ea.status = 1,1,0)) as present,";
+      query += " ("+total_days+" - h.total_holidays) as total_working_days,h.total_holidays,la.total_leaves, ";
+      query += " b.total_days ";
+      query += " FROM `employee_attendance` as ea ";
+      query += " LEFT JOIN employee as em ON ea.userid = em.userid ";
+      // query += " LEFT JOIN employee_worksheet as a ON ea.userid = a.userid and ea.date = a.date ";
+      query += " LEFT JOIN (SELECT COUNT(t.row_id) as total_days,t.userid FROM (SELECT * FROM `employee_worksheet` WHERE userid = "+body.id+" and date >= "+start_date+" and date <= "+end_date+"  GROUP BY userid,date) as t GROUP BY t.userid) as b ON b.userid = ea.userid ";
+      query += " LEFT JOIN (SELECT COUNT(*) as total_holidays,"+body.id+" as userid FROM `holidays` WHERE `date`>= "+start_date+" AND `date`<= "+end_date+") as h ON h.userid = ea.userid ";
+      query += " LEFT JOIN (SELECT COUNT(*) as total_leaves,userid FROM `leave_application` WHERE `date_from`>= "+start_date+" AND `date_from`<= "+end_date+") as la ON la.userid = ea.userid ";
+      // query += " LEFT JOIN (SELECT userid,SUM(IF(status = 0,1,0)) as absent, SUM(status) as present FROM `employee_attendance` WHERE userid = "+body.id+" and date >= "+start_date+" and date <= "+end_date+" GROUP BY userid) as ab on ab.userid = ea.userid ";
+      query += " WHERE ea.userid = "+body.id+" and ea.date >= "+start_date+" and ea.date <= "+end_date+" GROUP BY ea.userid ";
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#0068 in 'employeeService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "employee report found successfully!!",data: result,http_code: 200});
+        }
+      });
+    },
+
+    getDaysBetween2Dates(first_date,second_date){
+      let oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+      let firstDate = new Date(first_date);
+      let secondDate = new Date(second_date);
+
+      let diffDays = Math.round(Math.abs((firstDate - secondDate) / oneDay));
+      return diffDays;
     }
 };
 module.exports = employeeService;

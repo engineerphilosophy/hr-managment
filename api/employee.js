@@ -46,7 +46,7 @@ const superadminService = require('./services/superadminService');
  */
 router.get('/getEmployeeDetailsById', function(req, res) {
   if(req.query.id){
-    req.body.id = req.query.id;
+    req.body = Object.assign(req.body,req.query);
     superadminService.getEmployeeDetailsById(req.body,function (error,data_response) {
       if (error) {
         console.log('error in getEmployeeDetailsById---employee.js-',error);
@@ -158,7 +158,7 @@ router.get('/getWorkingMonthsList', function(req, res) {
  */
 router.get('/getEmployeesDailyWorksheetData', function(req, res) {
   req.body = Object.assign(req.body,req.query);
-  superadminService.getEmployeesDailyWorksheetData(req.body,function (error,data_response) {
+  superadminService.getEmployeesDailyWorksheetDataByDates(req.body,function (error,data_response) {
     if (error) {
       console.log('error in getEmployeesDailyWorksheetData---employee.js-',error);
       res.json(data_response);

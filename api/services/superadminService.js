@@ -96,7 +96,8 @@ const superadminService = {
     },
 
     getEmployeeList : function(body,callback){
-      let query = "SELECT `userid`, `name`, `mobile`, `email`, `salary`, `leave_credit`, `start_date`, `end_date`, `increament_date`, `document`, `modified_on`, `created_on` FROM `employee` ORDER BY userid DESC";
+      let dates_string = superadminService.convertDateAccordingToOffset(['start_date','end_date','increament_date'],body.offset,'');
+      let query = "SELECT `userid`, `name`, `mobile`, `email`, `salary`, `leave_credit`, "+dates_string+", `document`, `modified_on`, `created_on` FROM `employee` ORDER BY userid DESC";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#002 in 'superadminService.js'", error, query);
@@ -110,7 +111,8 @@ const superadminService = {
     getEmployeeDetailsById : function(body,callback){
       let userid = body.user_type == 'superadmin' ? body.id : body.userid;
       let password_string = body.select_password ? ",bcrypt_password " : "";
-      let query = "SELECT `userid`,`userid` as id, `name`, `mobile`, `email`, `salary`, `leave_credit`, `start_date`, `end_date`, `increament_date`, `document`, `modified_on`, `created_on` "+password_string+" FROM `employee` WHERE userid = "+userid+" ";
+      let dates_string = superadminService.convertDateAccordingToOffset(['start_date','end_date','increament_date'],body.offset,'');
+      let query = "SELECT `userid`,`userid` as id, `name`, `mobile`, `email`, `salary`, `leave_credit`, "+dates_string+", `document`, `modified_on`, `created_on` "+password_string+" FROM `employee` WHERE userid = "+userid+" ";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#002 in 'superadminService.js'", error, query);
@@ -221,8 +223,9 @@ const superadminService = {
       // if month and user is selected then get a user monthly report
       // if only user is selected then get a user today worksheet
       let monthly = body.monthly, daily = body.daily, date = body.date, userid = body.id;
+      let offset = body.offset;
       // today start date
-      date = date ? new Date(date) : new Date();
+      date = date ? new Date(+date) : new Date();
       var start_date = setDateStartAndEndTime(false,true);
       var end_date = setDateStartAndEndTime(false,false);
       let whereCondition = " a.date >= "+start_date+" AND a.date <= "+end_date+" ";
@@ -242,11 +245,13 @@ const superadminService = {
       if(userid){
         whereCondition += " and a.userid = "+userid+" ";
       }
-
-      let query = "SELECT a.*,b.name, b.email,b.mobile ";
+      let dates_string = superadminService.convertDateAccordingToOffset(['date','start_time','end_time'],offset,'a');
+      let query = "SELECT t.*, TIME_FORMAT(from_unixtime((t.start_time - "+offset+")/1000),'%r') as formatted_start_time,TIME_FORMAT(from_unixtime((t.end_time - "+offset+")/1000),'%r') as formatted_end_time ";
+      query += ",DATE_FORMAT(from_unixtime((t.date - "+offset+")/1000),'%d/%m/%Y') as formatted_date,DATE_FORMAT(from_unixtime((t.date - "+offset+")/1000),'%d %M') as date_month FROM ";
+      query += "(SELECT a.`row_id`, a.`userid`, a.`module`, a.`description`, a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile, "+dates_string+" ";
       query += " FROM `employee_worksheet` as a ";
       query += " LEFT JOIN employee as b ON a.userid = b.userid ";
-      query += " WHERE "+whereCondition+" order by a.`date`,a.userid DESC";
+      query += " WHERE "+whereCondition+" order by a.`date`,a.userid DESC) as t order by t.`date`,t.userid DESC";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#007 in 'superadminService.js'", error, query);
@@ -255,6 +260,93 @@ const superadminService = {
           callback(null, {status: true,message: "Employee worksheet data found successfully!!",data: result,http_code: 200});
         }
       });
+    },
+
+    getEmployeesDailyWorksheetDataByDates : function(body,callback){
+      // default - get all users today date worksheet
+      // if month selected then get monthly all users worksheet
+      // if month and user is selected then get a user monthly report
+      // if only user is selected then get a user today worksheet
+      let from_date = body.from_date,to_date = body.to_date, userid = body.id;
+      let offset = body.offset;
+      // today start date
+      if(!from_date){
+        if(userid){
+          let date = new Date();
+          from_date = new Date(date.getFullYear(), date.getMonth(), 1); // get current month first date
+        }else {
+          from_date = new Date(+new Date() - (5*24*60*60*1000)); // 5 day before date
+        }
+      }
+      to_date = to_date ? new Date(to_date) : new Date();
+      var start_date = setDateStartAndEndTime(+from_date,true);
+      var end_date = setDateStartAndEndTime(+to_date,false);
+      let whereCondition = " ea.date >= "+start_date+" AND ea.date <= "+end_date+" ";
+      // check if user is selected then add where condition for a user
+      let order_by ="order by ea.`date`,ea.userid DESC";
+      if(userid){
+        order_by =" order by ea.`date` DESC";
+        whereCondition += " and ea.userid = "+userid+" ";
+      }
+      let dates_string = superadminService.convertDateAccordingToOffset(['date','start_time','end_time'],offset,'a');
+      offset = offset ? offset : 0;
+      var offset_string = offset;
+      if(offset>=0){
+        offset_string = " + "+offset;
+      }
+      let query = "SELECT t.*,TIME_FORMAT(from_unixtime((t.start_time - "+offset+")/1000),'%r') as formatted_start_time,TIME_FORMAT(from_unixtime((t.end_time - "+offset+")/1000),'%r') as formatted_end_time ";
+      query += ",DATE_FORMAT(from_unixtime((IF(date,date,ea_date) - "+offset+")/1000),'%d-%m-%Y') as formatted_date,DATE_FORMAT(from_unixtime((IF(date,date,ea_date) - "+offset+")/1000),'%d %M') as date_month ";
+      query += " FROM (SELECT ea.row_id as ea_id,(ea.date "+offset_string+") as ea_date,a.`row_id`, ea.`userid`, a.`module`, a.`description`,a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile,ea.status,"+dates_string+" ";
+      query += " FROM `employee_attendance` as ea ";
+      query += " LEFT JOIN employee_worksheet as a ON a.userid = ea.userid AND a.date = ea.date ";
+      query += " LEFT JOIN employee as b ON b.userid = ea.userid ";
+      query += " WHERE "+whereCondition+" "+order_by+") as t ORDER BY t.ea_date DESC";
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#007 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          let grouped_data = {};
+          if(userid){
+            grouped_data = underscore.groupBy(result,'ea_date');
+            const employeeService = require('../services/employeeService');
+            employeeService.getEmployeeWorkingDayDetails(body,function(error,response){
+              if (error) {
+                console.log("Error#0071 in 'superadminService.js'", error);
+                callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+              } else {
+                let user_info = (response.data && response.data.length > 0) ? response.data[0] : {};
+                callback(null, {status: true,message: "Employee worksheet data found successfully!!",data: {result:result,grouped_data:grouped_data,working_details:user_info},http_code: 200});
+              }
+            });
+          }else {
+            let data = underscore.groupBy(result,'ea_date');
+            Object.keys(data).map(function(d){
+              if(data[d] && data[d].length > 0){
+                grouped_data[d] = underscore.groupBy(data[d],'userid');
+              }
+            });
+            callback(null, {status: true,message: "Employee worksheet data found successfully!!",data: {result:result,grouped_data:grouped_data},http_code: 200});
+          }
+        }
+      });
+    },
+
+    convertDateAccordingToOffset : function(columns,offset,alias){
+      var string = [];
+      offset = offset ? offset : 0;
+      var offset_string = offset;
+      if(offset>=0){
+        offset_string = " + "+offset;
+      }
+      for(var i=0; i< columns.length; i++){
+        let column =  columns[i];
+        if(alias){
+          column = alias+"."+columns[i];
+        }
+        string.push("("+column+" "+offset_string+") as "+columns[i]+" ");
+      }
+      return string.join(',');
     },
 
     getAllEmployeeReportCard : function(body,callback){
@@ -343,12 +435,15 @@ const superadminService = {
 
     getBusinessHolidayList : function(body,callback){
       let year = body.year ? parseInt(body.year) : new Date().getFullYear();
+      year = year ? year : new Date().getFullYear();
       let start_date = year +"-01-01";
       let end_date = year +"-12-31";
       var sdate = setDateStartAndEndTime(start_date,true);
       // today end date
       var edate = setDateStartAndEndTime(end_date,false);
-      let query = "SELECT *,dayofweek(DATE_FORMAT(FROM_UNIXTIME(date/1000), '%Y-%m-%d')) as day FROM `holidays` WHERE `date` >= "+sdate+" AND `date` <= "+edate;
+      let dates_string = superadminService.convertDateAccordingToOffset(['date'],body.offset,'');
+      let offset = body.offset ? body.offset : 0;
+      let query = "SELECT t.*,dayofweek(DATE_FORMAT(FROM_UNIXTIME((t.date - "+offset+")/1000), '%Y-%m-%d')) as day FROM (SELECT `row_id`, `name`, "+dates_string+", `created_on`, `modified_on` FROM `holidays` WHERE `date` >= "+sdate+" AND `date` <= "+edate+" order by date desc) as t order by date desc";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#010 in 'superadminService.js'", error, query);
@@ -360,14 +455,15 @@ const superadminService = {
     },
 
     getLeaveApplicationList : function(body,callback){
-      let date = body.date ? new Date(body.date) : (new Date());
+      let date = body.date ? new Date(+body.date) : (new Date());
       var firstDay = +new Date(date.getFullYear(), date.getMonth(), 1);
       var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
       let whereCondition = "";
       if(body.user_type == 'employee'){
         whereCondition = " AND a.userid = "+body.userid;
       }
-      let query = "SELECT a.* ,em.name,em.mobile,em.email,em.leave_credit ";
+      let dates_string = superadminService.convertDateAccordingToOffset(['date_from','date_to'],body.offset,'a');
+      let query = "SELECT a.`row_id`, a.`userid`, a.`description`, "+dates_string+", a.`total_days`, a.`approve_status`, a.`created_on`, a.`modified_on` ,em.name,em.mobile,em.email,em.leave_credit ";
       query += " FROM `leave_application` as a "
       query += " LEFT JOIN employee as em ON a.userid = em.userid"
       query += " WHERE a.`date_from` >= "+firstDay+" AND a.`date_from` <= "+lastDay+" "+whereCondition+" ORDER BY a.`date_from` DESC";
@@ -377,6 +473,19 @@ const superadminService = {
           callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
         } else {
           callback(null, {status: true,message: "leave application list found successfully!!",data: result,http_code: 200});
+        }
+      });
+    },
+
+    addPresentByUser : function(body,callback){
+      let date = generateDateTime(body.date), userid = body.id, attendance_id = body.attendance_id;
+      let query = "UPDATE `employee_attendance` SET `status`=1,`modified_on`="+env.timestamp()+" WHERE `userid` = "+userid+" AND `row_id` = "+attendance_id;
+      connection.query(query,function(error,result){
+        if(error){
+          console.log("Error#005.1 in 'superadminService.js'",error,query);
+          callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
+        }else{
+          callback(null,{status:true,message:"Attendance added successfully!!",data:{},http_code:200});
         }
       });
     },
@@ -426,6 +535,24 @@ function setDateStartAndEndTime(date,start_time){
   return +new Date(start);
 }
 
+function generateDateTime(date,time,end){
+  let newDate = new Date(date);
+  if(end){
+    newDate.setHours(23,59,59,999);
+  }else {
+    newDate.setHours(0,0,0,0);
+  }
+  let start_date = +new Date(newDate);
+  if(time){
+    let timeArray = time ? time.split(':') : [];
+    let hour = 60*60*1000*(parseInt(timeArray[0]));
+    let minute = 60*1000*(parseInt(timeArray[1]));
+    return (start_date + hour + minute);
+  }else {
+    return start_date;
+  }
+}
+
 // 1. hr login
 //  - list of employeeds in a table - aggird
 //  - on click on a user in the list, hr should be  able to see the details of that user
@@ -446,3 +573,16 @@ function setDateStartAndEndTime(date,start_time){
 //     - Total leaves in hand - (monthly wise, we can see how the employee took holidays )
 //     - LEave application add  - from and to date filed -
 //     - Daily work sheet - Old can be edited and added
+
+//********** employee wise list per day ***************
+
+// SELECT em.userid,em.name,em.mobile,em.email, a.date,DATE_FORMAT(from_unixtime(a.date/1000),'%d-%m-%Y') as formatted_date, b.total_days
+// FROM `employee_worksheet` as a
+// LEFT JOIN employee as em ON a.userid = em.userid
+// LEFT JOIN (SELECT COUNT(t.row_id) as total_days,t.userid FROM (SELECT * FROM `employee_worksheet` GROUP BY userid,date) as t GROUP BY t.userid) as b ON b.userid = a.userid
+// GROUP BY a.userid,a.date
+
+//********** employee wise total working days ***************
+// SELECT em.userid,em.name,em.mobile,em.email,COUNT(t.row_id) as total_days,t.userid FROM (SELECT * FROM `employee_worksheet` GROUP BY userid,date) as t
+// LEFT JOIN employee as em ON t.userid = em.userid
+// GROUP BY t.userid
