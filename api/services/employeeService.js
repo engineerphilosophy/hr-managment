@@ -492,8 +492,8 @@ function generateDateTime(date,time,end){
   let start_date = +new Date(newDate);
   if(time){
     let timeArray = time ? time.split(':') : [];
-    let hour = 60*60*1000*(parseInt(timeArray[0]));
-    let minute = 60*1000*(parseInt(timeArray[1]));
+    let hour = 60*60*1000*(parseInt(timeArray[0] ? timeArray[0] : 0));
+    let minute = 60*1000*(parseInt(timeArray[1] ? timeArray[1] : 0));
     return (start_date + hour + minute);
   }else {
     return start_date;

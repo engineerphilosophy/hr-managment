@@ -42,15 +42,20 @@ function checkAndUpdateEmployeesAttendance(){
             // check if user added today work then nothing to do
             cb();
           }else {
-            user.date = todaydate;
-            employeeService.addUpdateEmployeeAttendence(user,function(error,response){
-              if (error) {
-                console.log("Error#002 in 'cronjobForDailyAttendance.js'", error, employeeQuery);
-                cb(error);
-              } else {
-                cb();
-              }
-            })
+            if(holidays && holidays.length>0){
+              // if today is holiday then we will not insert data
+              cb();
+            }else {
+              user.date = todaydate;
+              employeeService.addUpdateEmployeeAttendence(user,function(error,response){
+                if (error) {
+                  console.log("Error#002 in 'cronjobForDailyAttendance.js'", error, employeeQuery);
+                  cb(error);
+                } else {
+                  cb();
+                }
+              })
+            }
           }
         },function(error){
           console.log('Empoyee daily attendance is updated!!');
