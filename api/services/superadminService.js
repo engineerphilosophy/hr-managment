@@ -278,7 +278,7 @@ const superadminService = {
           from_date = new Date(+new Date() - (5*24*60*60*1000)); // 5 day before date
         }
       }
-      to_date = to_date ? new Date(to_date) : new Date();
+      // to_date = to_date ? new Date(to_date) : new Date();
       var start_date = setDateStartAndEndTime(+from_date,true);
       var end_date = setDateStartAndEndTime(+to_date,false);
       let whereCondition = " ea.date >= "+start_date+" AND ea.date <= "+end_date+" ";
