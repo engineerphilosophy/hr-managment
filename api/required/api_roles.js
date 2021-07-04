@@ -19,6 +19,7 @@ var api_list = {
   'logout':['superadmin','employee'],
   'downloadFile':['superadmin'],
   'addPresentByUser':['superadmin'],
+  'exportEmployeeReport':['superadmin'],
   ////////// super admin api end //////////
   ////////// employee api start //////////
   'addUpdateDailyWorkData':['employee'],

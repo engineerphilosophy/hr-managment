@@ -7,6 +7,8 @@ const connection = env.dbconnection;
 const transporter = env.transporter;
 const underscore = require('underscore');
 const bcrypt = require('bcrypt');
+const mkdirp = require('mkdirp');
+const XlsxPopulate = require('xlsx-populate');
 const common_functions = require('../functions');
 const saltRounds = 10;
 const monthnamelist = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -235,6 +237,7 @@ const superadminService = {
         var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
         whereCondition = " a.date >= "+firstDay+" AND a.date <= "+lastDay+" ";
       }else if (daily == true || daily == "true") {
+        date = body.date ? new Date(body.date) : new Date();
         // check and create daily where condition
         start_date = setDateStartAndEndTime(date,true);
         // today end date
@@ -251,7 +254,7 @@ const superadminService = {
       query += "(SELECT a.`row_id`, a.`userid`, a.`module`, a.`description`, a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile, "+dates_string+" ";
       query += " FROM `employee_worksheet` as a ";
       query += " LEFT JOIN employee as b ON a.userid = b.userid ";
-      query += " WHERE "+whereCondition+" order by a.`date`,a.userid DESC) as t order by t.`date`,t.userid DESC";
+      query += " WHERE "+whereCondition+" order by a.`date`,a.userid DESC) as t order by t.userid,t.`date` DESC";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#007 in 'superadminService.js'", error, query);
@@ -486,6 +489,78 @@ const superadminService = {
           callback(error,{status:false,message:"#005:Error in saving data!!",data:false,http_code:400});
         }else{
           callback(null,{status:true,message:"Attendance added successfully!!",data:{},http_code:200});
+        }
+      });
+    },
+
+    exportEmployeeReport : function(body,callback){
+      let from_date = body.from_date ? new Date(body.from_date) : new Date();
+      let to_date = body.to_date ? new Date(body.to_date) : new Date();
+      let monthName = monthnamelist[from_date.getMonth()];
+      let year = from_date.getFullYear();
+      var start_date = setDateStartAndEndTime(+from_date,true);
+      var end_date = setDateStartAndEndTime(+to_date,false);
+
+      const employeeService = require('../services/employeeService');
+      let total_days = employeeService.getDaysBetween2Dates(start_date,end_date);
+
+      let query = "SELECT em.userid,em.name,em.mobile,em.email,em.leave_credit,h.total_holidays,ifnull(la.total_leaves,0) as total_leaves,";
+      query += "("+total_days+" - h.total_holidays) AS total_working_days,b.total_days as total_days_worked,";
+      query += "SUM(IF(ea.status = 0, 1, 0)) AS absent,SUM(IF(ea.status = 1, 1, 0)) AS present ";
+      query += " FROM `employee_attendance` AS ea ";
+      query += " LEFT JOIN employee AS em ON ea.userid = em.userid ";
+      query += " LEFT JOIN (SELECT COUNT(t.row_id) AS total_days,t.userid FROM (SELECT * FROM `employee_worksheet` WHERE date >= "+start_date+" AND date <= "+end_date+" GROUP BY userid,date) AS t GROUP BY t.userid) AS b ";
+      query += " ON b.userid = ea.userid ";
+      query += " CROSS JOIN (SELECT COUNT(*) AS total_holidays FROM `holidays` WHERE `date` >= "+start_date+" AND `date` <= "+end_date+") AS h ";
+      query += " LEFT JOIN (SELECT COUNT(*) AS total_leaves,userid FROM `leave_application` WHERE `date_from` >= "+start_date+" AND `date_from` <= "+end_date+" GROUP BY userid) AS la ";
+      query += " ON la.userid = ea.userid ";
+      query += " WHERE ea.date >= "+start_date+" AND ea.date <= "+end_date+" GROUP BY ea.userid ";
+      connection.query(query, function (error, result) {
+        if (error) {
+          console.log("Error#200 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "#200:Error in downloading data!!", data: [], http_code: 400});
+        } else {
+          let headerTextArray=['S.No.','Employee Name','Mobile','Email','Leave Credit','Total Holidays','Total Leaves','Total Working Days','Total Days Worked','Present','Absent'];
+          let columnKeys = ['A','B','C','D','E','F','G','H','I','J','K'];
+          let headerKeys = ['s_no','name','mobile','email','leave_credit','total_holidays','total_leaves','total_working_days','total_days_worked','present','absent'];
+          mkdirp(env.downloadPath, function(err) {
+            if(err){
+              console.log("Error#201 in 'superadminService.js'", err);
+              callback(err, {status: false, message: "#201:Error in downloading data!!", data: [], http_code: 400});
+            }else {
+              let filename = "Report_"+monthName+"_"+year+"_"+(+new Date())+".xlsx";
+              let filepath = env.downloadPath+'/'+filename;
+              let dataToExport = {};
+              async.eachOf(result,function(d,ci,cb){
+                d.s_no = ci+1;
+                for (var i = 0; i < columnKeys.length; i++) {
+                  let key = columnKeys[i];
+                  if(!dataToExport[key]){
+                    dataToExport[key] = [];
+                  }
+                  dataToExport[key].push([d[headerKeys[i]]]);
+                }
+                cb();
+              },function(error){
+                if(error){
+                  console.log("Error#202 in 'superadminService.js'", error);
+                  callback(error, {status: false, message: "#202:Error in downloading data!!", data: [], http_code: 400});
+                }else{
+                  XlsxPopulate.fromBlankAsync().then(function(workbook){
+                    for (var i = 0; i < columnKeys.length; i++) {
+                      workbook.sheet("Sheet1").cell(columnKeys[i]+"1").value(headerTextArray[i]);
+                      let range = columnKeys[i]+"2:"+columnKeys[i]+(result.length + 1);
+                      workbook.sheet('Sheet1').range(range).value(dataToExport[columnKeys[i]]);
+                    }
+                    return workbook.toFileAsync(filepath);
+                  }).then(function(){
+                    console.log('report file cretaed');
+                    callback(null, {status: true,message: "Report created successfully!!",data: filename,http_code: 200});
+                  });
+                }
+              });
+            }
+          });
         }
       });
     },

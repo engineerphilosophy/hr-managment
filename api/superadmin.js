@@ -630,6 +630,62 @@ router.post('/addPresentByUser', function(req, res) {
     }
   });
 });
+
+/**
+ * @api {post} /superadmin/exportEmployeeReport export employee report
+ * @apiName exportEmployeeReport
+ * @apiGroup superadmin
+ *
+ * @apiAuthor Manglesh Patel - 04/07/2021
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Number} offset date offset
+ * @apiParam {String} from_date from date (2021-07-01)
+ * @apiParam {String} to_date to date (2021-07-31)
+ *
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message Report downloaded successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "Report downloaded successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in downloading data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in downloading data!!",
+ *       "data": {},
+ *     }
+ */
+router.post('/exportEmployeeReport',function(req,res){
+  superadminService.exportEmployeeReport(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in exportEmployeeReport---superadmin.js-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+
 /**
  * @api {get} /employee/downloadFile download file
  * @apiName downloadFile

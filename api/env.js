@@ -10,7 +10,7 @@ var hostName = process.env.HOST_NAME;
 
 var enviroment = {
   uploadPath : projectPath + "uploads/",
-  downloadPath : projectPath + "user_downloads/",
+  downloadPath : projectPath + "uploads/reports/",
   projectPath: projectPath,
   host : hostName,
   port:process.env.PORT,
