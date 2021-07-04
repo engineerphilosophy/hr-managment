@@ -254,7 +254,7 @@ const superadminService = {
       query += "(SELECT a.`row_id`, a.`userid`, a.`module`, a.`description`, a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile, "+dates_string+" ";
       query += " FROM `employee_worksheet` as a ";
       query += " LEFT JOIN employee as b ON a.userid = b.userid ";
-      query += " WHERE "+whereCondition+" order by a.`date`,a.userid DESC) as t order by t.userid,t.`date` DESC";
+      query += " WHERE "+whereCondition+" order by a.`date`,a.userid DESC) as t order by t.`date` DESC";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#007 in 'superadminService.js'", error, query);

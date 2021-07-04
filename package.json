@@ -13,7 +13,7 @@
     "apidoc": "^0.23.0",
     "apn": "^1.7.5",
     "async": "^1.5.0",
-    "bcrypt": "^1.0.3",
+    "bcrypt": "1.0.3",
     "body-parser": "^1.13.3",
     "connect-multiparty": "^2.2.0",
     "cookie-parser": "^1.4.3",
