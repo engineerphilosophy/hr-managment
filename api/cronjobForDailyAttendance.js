@@ -11,7 +11,7 @@ var connection = env.dbconnection;
 var CronJob = require('cron-job-manager');
 const employeeService = require('./services/employeeService');
 // var job = new CronJob('check_expiry_date','*/05 * * * * *',checkAndUpdateEmployeesAttendance,{start:true}); //every 5 second for testing
-var job = new CronJob('check_expiry_date','10 0 * * *',checkAndUpdateEmployeesAttendance,{start:true}); // 05 0 1 * * - every month 1st day at 12:05 am
+var job = new CronJob('check_expiry_date','30 4 * * *',checkAndUpdateEmployeesAttendance,{start:true}); // 05 0 1 * * - every month 1st day at 12:05 am
 function checkAndUpdateEmployeesAttendance(){
   let timeof12hour = 12*60*60*1000;
   let todaydate = new Date(env.timestamp() - timeof12hour);
