@@ -31,5 +31,14 @@ var enviroment = {
   env_name:env,
 };
 enviroment.env_type = process.env.ENV_TYPE;
-
+enviroment.transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  requireTLS:true,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD
+  }
+});
 module.exports = enviroment;

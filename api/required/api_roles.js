@@ -32,6 +32,7 @@ var api_list = {
   'deleteDailyWorkData':['employee'],
   'deleteLeaveApplication':['employee'],
   'getEmployeeReportCard':['employee'],
+  'exportEmployeeWorkSheetData':['employee']
   ////////// employee api end //////////
 };
 

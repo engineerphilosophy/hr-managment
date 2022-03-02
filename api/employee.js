@@ -604,4 +604,18 @@ router.get('/getEmployeeReportCard', function(req, res) {
     }
   });
 });
+
+// work by prashant
+
+router.get('/exportEmployeeWorkSheetData', function(req, res) {
+  req.body = Object.assign(req.body,req.query);
+  employeeService.exportEmployeeWorkSheetData(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in getEmployeeWorksheet---employee.js-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
 module.exports = router;

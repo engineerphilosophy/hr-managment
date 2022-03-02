@@ -7,8 +7,9 @@ var superSecret = require('./secret').secret;
 var common_functions = {
 
   genToken: function(user_data){
-    let expiresIn = "24h";
-    var token = jwt.sign(user_data, superSecret, {
+    let expiresIn = "30d";
+
+    var token = jwt.sign(user_data[0], superSecret, {
       expiresIn: expiresIn // change it to refresh token for mobile user.
     });
     return token;
