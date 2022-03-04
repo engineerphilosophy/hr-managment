@@ -479,6 +479,29 @@ const superadminService = {
         }
       });
     },
+    updateUnreadLeaveApplication : function(body,callback){
+         let query = "UPDATE `leave_application` SET `seen`=1,`modified_on`="+env.timestamp()+" WHERE seen=0"
+        connection.query(query,(error,result)=>{
+        if (error) {
+          console.log("Error#015 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "Unread leave application found successfully!!",data:result,http_code: 200});
+        }
+      })
+    },
+    countApplicationList : function(body,callback){
+      let query = "SELECT count(*) as total_row  FROM `leave_application` WHERE seen =0";
+
+      connection.query(query,(error,result)=>{
+        if (error) {
+          console.log("Error#015 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "leave application count successfully!!",data:result,http_code: 200});
+        }
+      })
+    },
 
     addPresentByUser : function(body,callback){
       let date = generateDateTime(body.date), userid = body.id, attendance_id = body.attendance_id;

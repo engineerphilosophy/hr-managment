@@ -556,6 +556,113 @@ router.get('/getLeaveApplicationList', function(req, res) {
   });
 });
 /**
+ * @api {get} /superadmin/updateUnreadLeaveApplication   Unread leave application list
+ * @apiName updateUnreadLeaveApplication
+ * @apiGroup superadmin
+ *
+ * @apiAuthor Prashant Gupta - 04/03/2023
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Number} date date of month to get leave application list by month
+ *
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message Unread leave application list found successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": " Unread leave application list found successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in getting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in getting data!!",
+ *       "data": {},
+ *     }
+ */
+router.get('/updateUnreadLeaveApplication', function(req, res) {
+  req.body = Object.assign(req.body,req.query);
+  superadminService.updateUnreadLeaveApplication(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in getLeaveApplicationList---superadmin-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+/**
+ * @api {get} /superadmin/countApplicationList    number count leave application list
+ * @apiName countApplicationList
+ * @apiGroup superadmin
+ *
+ * @apiAuthor Prashant Gupta - 04/03/2023
+ *
+ * @apiVersion 0.0.1
+ *
+ * @apiHeader {String} Authorization user token
+ *
+ * @apiParam {Number} date date of month to get leave application list by month
+ *
+ *
+ * @apiSuccess {Boolean} status true.
+ * @apiSuccess {Number} http_code  200.
+ * @apiSuccess {Object} data  [] .
+ * @apiSuccess {String} message  leave application count successfully!!
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *       "status": true,
+ *       "http_code": 200,
+ *       "message": "  leave application  count successfully!!",
+ *       "data": [],
+ *     }
+ *
+ * @apiError {Boolean} status false.
+ * @apiError {Number} http_code  400.
+ * @apiError {Object} data  blank object.
+ * @apiError {String} message Error in getting data!!
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Not Found
+ *     {
+ *       "status": false,
+ *       "http_code": 400,
+ *       "message": "Error in getting data!!",
+ *       "data": {},
+ *     }
+ */
+router.get('/countApplicationList', function(req, res) {
+  req.body = Object.assign(req.body,req.query);
+  superadminService.countApplicationList(req.body,function (error,data_response) {
+    if (error) {
+      console.log('error in getLeaveApplicationList---superadmin-',error);
+      res.json(data_response);
+    } else {
+      res.json(data_response);
+    }
+  });
+});
+
+/**
  * @api {post} /superadmin/updatePassword update the password of superadmin.
  * @apiName updatePassword
  * @apiGroup superadmin

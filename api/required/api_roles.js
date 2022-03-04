@@ -20,6 +20,8 @@ var api_list = {
   'downloadFile':['superadmin'],
   'addPresentByUser':['superadmin'],
   'exportEmployeeReport':['superadmin'],
+  'updateUnreadLeaveApplication':['superadmin'],
+  'countApplicationList':['superadmin'],
   ////////// super admin api end //////////
   ////////// employee api start //////////
   'addUpdateDailyWorkData':['employee'],
