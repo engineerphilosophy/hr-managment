@@ -59,11 +59,11 @@ module.exports = function(req, res, next) {
             res.status(401);
             return res.json({ status: 401, message: 'Failed to authenticate token.',data: false,http_code:400 });
           } else {
-            if( decoded[0].username || decoded[0].email){
-              req.body.userid = decoded[0].userid;
-              req.body.user_type = decoded[0].user_type;
+            if( decoded.username || decoded.email){
+              req.body.userid = decoded.userid;
+              req.body.user_type = decoded.user_type;
               // Authorize the user to see if s/he can access our resources
-              validateUser( decoded[0],request_data,token,function(exists){
+              validateUser( decoded,request_data,token,function(exists){
                 if( exists == 1 ){
                   let urlArray = url.split('/');
                   let api = urlArray[urlArray.length-1];

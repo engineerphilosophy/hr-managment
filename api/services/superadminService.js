@@ -254,7 +254,7 @@ const superadminService = {
       query += "(SELECT a.`row_id`, a.`userid`, a.`module`, a.`description`, a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile, "+dates_string+" ";
       query += " FROM `employee_worksheet` as a ";
       query += " LEFT JOIN employee as b ON a.userid = b.userid ";
-      query += " WHERE "+whereCondition+" order by a.`date`,a.userid DESC) as t order by t.`date` DESC";
+      query += " WHERE "+whereCondition+"  order by a.`date`,a.userid DESC) as t  order by t.`date` DESC";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#007 in 'superadminService.js'", error, query);
@@ -303,7 +303,7 @@ const superadminService = {
       query += " FROM `employee_attendance` as ea ";
       query += " LEFT JOIN employee_worksheet as a ON a.userid = ea.userid AND a.date = ea.date ";
       query += " LEFT JOIN employee as b ON b.userid = ea.userid ";
-      query += " WHERE "+whereCondition+" "+order_by+") as t ORDER BY t.ea_date DESC";
+      query += " WHERE "+whereCondition+" "+order_by+") as t GROUP by t.row_id ORDER BY t.ea_date DESC";
       connection.query(query, function (error, result) {
         if (error) {
           console.log("Error#007 in 'superadminService.js'", error, query);
@@ -475,14 +475,37 @@ const superadminService = {
           console.log("Error#015 in 'superadminService.js'", error, query);
           callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
         } else {
-          callback(null, {status: true,message: "leave application list found successfully!!",data: result,http_code: 200});
+          callback(null, {status: true,message: "leave application list found successfully!!",data:result,http_code: 200});
         }
       });
+    },
+    updateUnreadLeaveApplication : function(body,callback){
+         let query = "UPDATE `leave_application` SET `seen`=1,`modified_on`="+env.timestamp()+" WHERE seen=0"
+        connection.query(query,(error,result)=>{
+        if (error) {
+          console.log("Error#015 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "Unread leave application found successfully!!",data:result,http_code: 200});
+        }
+      })
+    },
+    countApplicationList : function(body,callback){
+      let query = "SELECT count(*) as total_row  FROM `leave_application` WHERE seen =0";
+
+      connection.query(query,(error,result)=>{
+        if (error) {
+          console.log("Error#015 in 'superadminService.js'", error, query);
+          callback(error, {status: false, message: "Error in getting data!!", data: [], http_code: 400});
+        } else {
+          callback(null, {status: true,message: "leave application count successfully!!",data:result,http_code: 200});
+        }
+      })
     },
 
     addPresentByUser : function(body,callback){
       let date = generateDateTime(body.date), userid = body.id, attendance_id = body.attendance_id;
-      let query = "UPDATE `employee_attendance` SET `status`=1,`modified_on`="+env.timestamp()+" WHERE `userid` = "+userid+" AND `row_id` = "+attendance_id;
+      let query = "UPDATE `employee_attendance` SET `status`=1,`modified_on`=" + env.timestamp() + " WHERE `userid` = " + userid + " AND `row_id` = " + attendance_id;
       connection.query(query,function(error,result){
         if(error){
           console.log("Error#005.1 in 'superadminService.js'",error,query);
@@ -522,8 +545,9 @@ const superadminService = {
         } else {
           let headerTextArray=['S.No.','Employee Name','Mobile','Email','Leave Credit','Total Holidays','Total Leaves','Total Working Days','Total Days Worked','Present','Absent'];
           let columnKeys = ['A','B','C','D','E','F','G','H','I','J','K'];
-          let headerKeys = ['s_no','name','mobile','email','leave_credit','total_holidays','total_leaves','total_working_days','total_days_worked','present','absent'];
+          let headerKeys = ['s_no','name','mobile','email','leave_credit','total_holidays','total_leaves','total_working_days','total_days_worked','present','absent'];         
           mkdirp(env.downloadPath, function(err) {
+            
             if(err){
               console.log("Error#201 in 'superadminService.js'", err);
               callback(err, {status: false, message: "#201:Error in downloading data!!", data: [], http_code: 400});
