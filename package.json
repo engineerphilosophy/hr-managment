@@ -1,7 +1,7 @@
 {
   "name": "excellen",
   "version": "1.0.0",
-  "description": "Excellen Project",
+  "description": "excellen project",
   "main": "excellen.js",
   "scripts": {
     "start": "nodemon web.js"
@@ -12,6 +12,10 @@
   },
   "author": "engineerphilosophy",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pras0704/hr-managment/issues"
+  },
+  "homepage": "https://github.com/pras0704/hr-managment#readme",
   "dependencies": {
     "apidoc": "^0.50.4",
     "apn": "^2.2.0",
@@ -21,17 +25,17 @@
     "connect-multiparty": "^2.2.0",
     "cookie-parser": "^1.4.6",
     "cookie-session": "^2.0.0",
-    "cors": "^2.8.5",
+    "cron": "^1.8.2",
     "cron-job-manager": "^2.2.1",
     "csurf": "^1.11.0",
     "dotenv": "^16.0.0",
-    "express": "^4.17.2",
+    "express": "^4.17.3",
     "express-device": "^0.4.2",
-    "fs-extra": "^10.0.0",
+    "fs-extra": "^10.0.1",
     "jsonwebtoken": "^5.5.4",
     "jszip": "^3.7.1",
     "mime-types": "^2.1.34",
-    "mkdirp": "^0.5.1",
+    "mkdirp": "^1.0.4",
     "moment": "^2.29.1",
     "multer": "^1.4.4",
     "mysql": "^2.18.1",
@@ -58,7 +62,7 @@
     "grunt-contrib-concat": "^2.0.0",
     "grunt-contrib-connect": "^3.0.0",
     "grunt-contrib-copy": "^1.0.0",
-    "grunt-contrib-jshint": "^3.1.1",
+    "grunt-contrib-jshint": "^3.2.0",
     "grunt-contrib-uglify": "^5.0.1",
     "grunt-contrib-watch": "^1.1.0",
     "grunt-exec": "^3.0.0",
@@ -66,11 +70,11 @@
     "grunt-html2js": "^0.8.0",
     "grunt-karma": "^4.0.2",
     "grunt-sass": "^3.1.0",
-    "jasmine-core": "^4.0.0",
-    "karma": "^6.3.16",
+    "jasmine-core": "^4.0.1",
+    "karma": "^6.3.17",
     "karma-jasmine": "^4.0.1",
     "karma-ng-html2js-preprocessor": "^1.0.0",
     "karma-phantomjs-launcher": "^1.0.4",
-    "mocha": "^9.2.0"
+    "mocha": "^9.2.1"
   }
 }
