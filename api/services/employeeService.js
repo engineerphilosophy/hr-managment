@@ -6,6 +6,7 @@ const env = require('../env');
 const connection = env.dbconnection;
 const transporter = env.transporter;
 const mkdirp = require('mkdirp');
+const XlsxPopulate = require('xlsx-populate');
 const CRUD = require('mysql-crud');
 const underscore = require('underscore');
 const extend = require('xtend');
@@ -13,6 +14,8 @@ const bcrypt = require('bcrypt');
 const common_functions = require('../functions');
 const superadminService = require('../services/superadminService');
 const saltRounds = 10;
+const monthnamelist = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
 const employeeService = {
     //@Manglesh
     getEmployeeDetailsByEmail : function(email_address,select_password,callback){
@@ -261,6 +264,7 @@ const employeeService = {
       end.setHours(23,59,59,999);
       var edate = +new Date(end);
       let query = "select * from employee_worksheet where `date` >= "+sdate+" AND `date` <= "+edate+" and userid = "+body.userid;
+      // console.log("hellooo",query);
       connection.query(query,function(error,result){
         if(error){
           console.log("Error#003 in 'employeeService.js'",error,query);
@@ -453,18 +457,104 @@ const employeeService = {
         } else {
           callback(null, {status: true,message: "employee report found successfully!!",data: result,http_code: 200});
         }
-      });
+      })
     },
-
     getDaysBetween2Dates(first_date,second_date){
-      let oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
+      let oneDay  = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
       let firstDate = new Date(first_date);
       let secondDate = new Date(second_date);
 
       let diffDays = Math.round(Math.abs((firstDate - secondDate) / oneDay));
       return diffDays;
-    }
-};
+    },
+    exportEmployeeWorkSheetData: function(body, callback) {
+      let monthly = body.monthly,
+          daily = body.daily,
+          date = body.date,
+          userid = body.id;
+      let offset = body.offset;
+      let from_date = body.date ? new Date(body.date) : new Date();
+      let monthName = monthnamelist[from_date.getMonth()];
+      let year = from_date.getFullYear();
+      date = date ? new Date(+date) : new Date();
+      var start_date = setDateStartAndEndTime(false, true);
+      var end_date = setDateStartAndEndTime(false, true);
+      let whereCondition = " a.date >= " + start_date + " AND a.date <= " + end_date + " ";
+      if (monthly == true || monthly == "true") {
+          var firstDay = +new Date(date.getFullYear(), date.getMonth(), 1);
+          var lastDay = +new Date(date.getFullYear(), date.getMonth() + 1, 0);
+          whereCondition = " a.date >= " + firstDay + " AND a.date <= " + lastDay + " ";
+      } else if (daily == true || daily == "true") {
+          date = body.date ? new Date(body.date) : new Date();
+          start_date = setDateStartAndEndTime(+date, true);
+          end_date = setDateStartAndEndTime(+date, true);
+          whereCondition = " a.date >= " + start_date + " AND a.date <= " + end_date + " ";
+      }
+      if (userid) {
+          whereCondition += " and a.userid = " + userid + " ";
+      }
+      let dates_string = superadminService.convertDateAccordingToOffset(['date', 'start_time', 'end_time'], offset, 'a');
+      let query = "SELECT t.*, TIME_FORMAT(from_unixtime((t.start_time - " + offset + ")/1000),'%r') as formatted_start_time,TIME_FORMAT(from_unixtime((t.end_time - " + offset + ")/1000),'%r') as formatted_end_time ";
+      query += ",DATE_FORMAT(from_unixtime((t.date - " + offset + ")/1000),'%d/%m/%Y') as formatted_date,DATE_FORMAT(from_unixtime((t.date - " + offset + ")/1000),'%d %M') as date_month FROM ";
+      query += "(SELECT a.`row_id`, a.`userid`, a.`module`, a.`description`, a.`created_on`, a.`modified_on`,b.name, b.email,b.mobile, " + dates_string + " ";
+      query += " FROM `employee_worksheet` as a ";
+      query += " LEFT JOIN employee as b ON a.userid = b.userid ";
+      query += " WHERE " + whereCondition + "  order by a.`date`,a.userid DESC) as t  order by t.`date` DESC";
+
+      connection.query(query, function(error, result) {
+          if (error) {
+              console.log("Error#200 in 'superadminService.js'", error, query);
+              callback(error, { status: false, message: "#201:Error in downloading data!!", data: [], http_code: 400 });
+
+          } else {
+
+              let headerTextArray = ['S.No.', 'Date', 'Module Name', 'Description', 'Start Time','End time', 'Present'];
+              let columnKeys = ['A', 'B', 'C', 'D', 'E', 'F','G'];
+              let headerKeys = ['s_no', 'date_month', 'module', 'description', 'formatted_start_time','formatted_end_time' ];
+              mkdirp(env.downloadPath, function(err) {
+
+                  if (err) {
+                      console.log("Error#201 in 'superadminService.js'", err);
+                      callback(err, { status: false, message: "#201:Error in downloading data!!", data: [], http_code: 400 });
+                  } else {
+                      let filename = "Report_" + monthName + "_" + year + "_" + (+new Date()) + ".xlsx";
+                      let filepath = env.downloadPath + '/' + filename;
+                      let dataToExport = {};
+                      async.eachOf(result, function(d, ci, cb) {
+                          d.s_no = ci + 1;
+                          for (var i = 0; i < columnKeys.length; i++) {
+                              let key = columnKeys[i];
+                              if (!dataToExport[key]) {
+                                  dataToExport[key] = [];
+                              }
+                              dataToExport[key].push([d[headerKeys[i]]]);
+                          }
+                          cb();
+                      }, function(error) {
+                          if (error) {
+                              console.log("Error#202 in 'superadminService.js'", error);
+                              callback(error, { status: false, message: "#202:Error in downloading data!!", data: [], http_code: 400 });
+                          } else {
+                              XlsxPopulate.fromBlankAsync().then(function(workbook) {
+                                  for (var i = 0; i < columnKeys.length; i++) {
+                                      workbook.sheet("Sheet1").cell(columnKeys[i] + "1").value(headerTextArray[i]);
+                                      let range = columnKeys[i] + "2:" + columnKeys[i] + (result.length + 1);
+                                      workbook.sheet('Sheet1').range(range).value(dataToExport[columnKeys[i]]);
+                                  }
+                                  return workbook.toFileAsync(filepath);
+                              }).then(function() {
+                                  console.log('report file cretaed');
+                                  callback(null, { status: true, message: "Report created successfully!!", data: filename, http_code: 200 });
+                              });
+                          }
+                      });
+                  }
+              });
+          }
+      })
+  },
+
+};  
 module.exports = employeeService;
 
 function getDates(startDate, stopDate) {
@@ -509,3 +599,5 @@ function setDateStartAndEndTime(date,start_time){
   }
   return +new Date(start);
 }
+
+
